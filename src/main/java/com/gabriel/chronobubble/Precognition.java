@@ -7,6 +7,7 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.network.PacketDistributor;
@@ -70,6 +71,11 @@ public class Precognition {
         byte[] k = new byte[ids.size()];
         for (int i = 0; i < a.length; i++) { a[i] = ids.get(i); k[i] = kinds.get(i); }
         ChronoBubbleMod.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new PrecogPacket(a, k));
+    }
+
+    @SubscribeEvent
+    public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        WAS_ACTIVE.remove(event.getPlayer().getUUID());
     }
 
     private static void scan(ServerPlayerEntity player, List<Integer> ids, List<Byte> kinds) {

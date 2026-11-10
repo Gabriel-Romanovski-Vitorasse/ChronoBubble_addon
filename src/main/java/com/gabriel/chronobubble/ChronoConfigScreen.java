@@ -4,7 +4,10 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.gui.widget.button.Button;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.common.ForgeConfigSpec;
 
 import java.util.ArrayList;
@@ -25,10 +28,10 @@ public class ChronoConfigScreen extends Screen {
     private int page;
     private final Map<ChronoConfig.Opt, Boolean> pendingBool = new HashMap<>();
     private final Map<ChronoConfig.Opt, String> pendingText = new HashMap<>();
-    private String status = "";
+    private ITextComponent status = StringTextComponent.EMPTY;
 
     public ChronoConfigScreen(Screen parent) {
-        super(new StringTextComponent("Chrono Bubble - Configura\u00e7\u00e3o"));
+        super(new TranslationTextComponent("gui.chrono_bubble.title"));
         this.parent = parent;
         String lastTitle = null;
         List<ChronoConfig.Opt> cur = null;
@@ -65,8 +68,9 @@ public class ChronoConfigScreen extends Screen {
         return p != null ? p : fmt(o, o.value.get());
     }
 
-    private static String onOff(boolean b) {
-        return b ? "\u00a7aLigado" : "\u00a7cDesligado";
+    private static ITextComponent onOff(boolean b) {
+        return b ? new TranslationTextComponent("gui.chrono_bubble.on").withStyle(TextFormatting.GREEN)
+                 : new TranslationTextComponent("gui.chrono_bubble.off").withStyle(TextFormatting.RED);
     }
 
     // ---------- layout ----------
@@ -80,9 +84,9 @@ public class ChronoConfigScreen extends Screen {
             final ChronoConfig.Opt o = list.get(i);
             int y = y0 + i * 24;
             if (o.kind == ChronoConfig.Opt.BOOL) {
-                this.addButton(new Button(controlX, y, 150, 20, new StringTextComponent(onOff(boolOf(o))), b -> {
+                this.addButton(new Button(controlX, y, 150, 20, onOff(boolOf(o)), b -> {
                     pendingBool.put(o, !boolOf(o));
-                    b.setMessage(new StringTextComponent(onOff(boolOf(o))));
+                    b.setMessage(onOff(boolOf(o)));
                 }));
             } else {
                 TextFieldWidget tf = new TextFieldWidget(this.font, controlX, y, 150, 20, StringTextComponent.EMPTY);
@@ -94,16 +98,16 @@ public class ChronoConfigScreen extends Screen {
         }
 
         int by = this.height - 52;
-        this.addButton(new Button(this.width / 2 - 155, by, 100, 20, new StringTextComponent("< Anterior"), b -> changePage(-1)));
-        this.addButton(new Button(this.width / 2 + 55, by, 100, 20, new StringTextComponent("Pr\u00f3xima >"), b -> changePage(1)));
-        this.addButton(new Button(this.width / 2 - 155, this.height - 28, 100, 20, new StringTextComponent("Salvar e fechar"), b -> save()));
-        this.addButton(new Button(this.width / 2 - 50, this.height - 28, 100, 20, new StringTextComponent("Restaurar p\u00e1gina"), b -> resetPage()));
-        this.addButton(new Button(this.width / 2 + 55, this.height - 28, 100, 20, new StringTextComponent("Cancelar"), b -> this.minecraft.setScreen(parent)));
+        this.addButton(new Button(this.width / 2 - 155, by, 100, 20, new TranslationTextComponent("gui.chrono_bubble.prev"), b -> changePage(-1)));
+        this.addButton(new Button(this.width / 2 + 55, by, 100, 20, new TranslationTextComponent("gui.chrono_bubble.next"), b -> changePage(1)));
+        this.addButton(new Button(this.width / 2 - 155, this.height - 28, 100, 20, new TranslationTextComponent("gui.chrono_bubble.save"), b -> save()));
+        this.addButton(new Button(this.width / 2 - 50, this.height - 28, 100, 20, new TranslationTextComponent("gui.chrono_bubble.reset"), b -> resetPage()));
+        this.addButton(new Button(this.width / 2 + 55, this.height - 28, 100, 20, new TranslationTextComponent("gui.chrono_bubble.cancel"), b -> this.minecraft.setScreen(parent)));
     }
 
     private void changePage(int delta) {
         page = (page + delta + pages.size()) % pages.size();
-        status = "";
+        status = StringTextComponent.EMPTY;
         this.init(this.minecraft, this.width, this.height);
     }
 
@@ -112,7 +116,7 @@ public class ChronoConfigScreen extends Screen {
             if (o.kind == ChronoConfig.Opt.BOOL) pendingBool.put(o, (Boolean) o.def);
             else pendingText.put(o, fmt(o, o.def));
         }
-        status = "\u00a77P\u00e1gina restaurada ao padr\u00e3o (clique em Salvar para gravar).";
+        status = new TranslationTextComponent("gui.chrono_bubble.reset_done").withStyle(TextFormatting.GRAY);
         this.init(this.minecraft, this.width, this.height);
     }
 
@@ -128,7 +132,7 @@ public class ChronoConfigScreen extends Screen {
                 d = Math.max(o.min, Math.min(o.max, d));
                 toSet.put(o, o.kind == ChronoConfig.Opt.INT ? (Object) Integer.valueOf((int) Math.round(d)) : (Object) Double.valueOf(d));
             } catch (NumberFormatException ex) {
-                status = "\u00a7cValor inv\u00e1lido em: " + o.label;
+                status = new TranslationTextComponent("gui.chrono_bubble.invalid", o.label).withStyle(TextFormatting.RED);
                 return;
             }
         }
@@ -139,7 +143,7 @@ public class ChronoConfigScreen extends Screen {
             ChronoConfig.SPEC.save();
             ChronoConfig.apply();
         } catch (Throwable t) {
-            status = "\u00a7cN\u00e3o consegui salvar: " + t.getClass().getSimpleName();
+            status = new TranslationTextComponent("gui.chrono_bubble.save_failed", t.getClass().getSimpleName()).withStyle(TextFormatting.RED);
             return;
         }
         this.minecraft.setScreen(parent);
@@ -161,7 +165,7 @@ public class ChronoConfigScreen extends Screen {
             ChronoConfig.Opt o = list.get(i);
             drawString(ms, this.font, o.label, labelX, y0 + i * 24 + 6, 0xE0E0E0);
         }
-        drawCenteredString(ms, this.font, new StringTextComponent(status), this.width / 2, this.height - 66, 0xFFFFFF);
+        drawCenteredString(ms, this.font, status, this.width / 2, this.height - 66, 0xFFFFFF);
         super.render(ms, mouseX, mouseY, partial);
 
         // dica ao passar o mouse sobre o nome da op\u00e7\u00e3o
@@ -169,7 +173,7 @@ public class ChronoConfigScreen extends Screen {
             int y = y0 + i * 24;
             if (mouseX >= labelX && mouseX < this.width / 2 + 28 && mouseY >= y && mouseY < y + 20) {
                 String tip = list.get(i).comment + (list.get(i).kind == ChronoConfig.Opt.BOOL ? ""
-                        : "  [" + trimZeros(list.get(i).min) + " a " + trimZeros(list.get(i).max) + "]");
+                        : "  [" + trimZeros(list.get(i).min) + " \u2013 " + trimZeros(list.get(i).max) + "]");
                 this.renderTooltip(ms, this.font.split(new StringTextComponent(tip), 220), mouseX, mouseY);
             }
         }

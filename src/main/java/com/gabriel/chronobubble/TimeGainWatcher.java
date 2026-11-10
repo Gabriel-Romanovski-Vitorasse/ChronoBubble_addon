@@ -2,6 +2,7 @@ package com.gabriel.chronobubble;
 
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.network.PacketDistributor;
@@ -24,6 +25,11 @@ public class TimeGainWatcher {
     public static int MAX_TIME = 0;   // 0 = sem limite
 
     private static final Map<UUID, Integer> LAST = new HashMap<>();
+
+    @SubscribeEvent
+    public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        LAST.remove(event.getPlayer().getUUID());
+    }
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {

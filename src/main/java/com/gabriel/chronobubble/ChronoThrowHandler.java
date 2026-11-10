@@ -5,6 +5,7 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.Event;
@@ -54,6 +55,7 @@ public class ChronoThrowHandler {
     public static void register() {
         if (!ENABLED) return;
         MinecraftForge.EVENT_BUS.addListener(ChronoThrowHandler::onPlayerTick);
+        MinecraftForge.EVENT_BUS.addListener(ChronoThrowHandler::onLogout);
         try {
             Class<?> pre = Class.forName("com.yuanno.block_clover.api.ability.AbilityUseEvent", false, ChronoThrowHandler.class.getClassLoader());
             Consumer<Event> handler = ChronoThrowHandler::onAbilityUse;
@@ -73,6 +75,22 @@ public class ChronoThrowHandler {
         return b.append("\u00a78] \u00a77").append(String.format("%.1fs", remaining / 20.0)).toString();
     }
 
+    /**
+     * Esquece as recargas j\u00e1 vencidas de quem saiu (sen\u00e3o os mapas s\u00f3 crescem num servidor aberto por muito
+     * tempo). Recarga ainda correndo fica guardada, para sair e entrar de novo n\u00e3o zerar a espera.
+     */
+    private static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        long now = event.getPlayer().level.getGameTime();
+        forgetExpired(READY_AT, event.getPlayer().getUUID(), now);
+        forgetExpired(STEAL_READY_AT, event.getPlayer().getUUID(), now);
+    }
+
+    /** Remove a recarga de {@code id} se ela j\u00e1 terminou. */
+    static void forgetExpired(Map<UUID, Long> map, UUID id, long now) {
+        Long ready = map.get(id);
+        if (ready != null && now >= ready) map.remove(id);
+    }
+
     /** A cada tick do servidor: mostra a recarga andando e avisa (com som) quando fica pronto. */
     private static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END || event.player.level.isClientSide) return;
@@ -86,7 +104,7 @@ public class ChronoThrowHandler {
         long now = player.level.getGameTime();
         if (now >= ready) {
             map.remove(player.getUUID());
-            player.displayClientMessage(new StringTextComponent("\u00a7b\u2726 " + label + " pronto"), true);
+            Msg.bar(player, TextFormatting.AQUA, "ready", label);
             player.level.playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.6F, 1.8F);
         } else if ((ready - now) % 4 == 0) {
@@ -108,7 +126,7 @@ public class ChronoThrowHandler {
             return;
         }
         if (!stasis && !steal && !grigora) return;
-        LOGGER.info("[ChronoBubble] " + name + " usado. Shift=" + player.isShiftKeyDown());
+        LOGGER.debug("[ChronoBubble] " + name + " usado. Shift=" + player.isShiftKeyDown());
 
         if (grigora) {                                  // Alt + Grigora = vers\u00e3o sustentada em \u00e1rea
             if (!SustainedStasis.GRIGORA_ENABLED || !SustainedStasis.holdsTrigger(player)) return;
@@ -139,11 +157,11 @@ public class ChronoThrowHandler {
             return;
         }
         if (!(BlockCloverBridge.getMana(player) > STEAL_MANA_REQUIRED)) {
-            player.displayClientMessage(new StringTextComponent("\u00a7cMana insuficiente."), true);
+            Msg.bar(player, TextFormatting.RED, "no_mana");
             return;
         }
         if (TIME_MAX > 0 && BlockCloverBridge.getTime(player) >= TIME_MAX) {
-            player.displayClientMessage(new StringTextComponent("\u00a77Seu Time j\u00e1 est\u00e1 cheio."), true);
+            Msg.bar(player, TextFormatting.GRAY, "time_full");
             return;
         }
         STEAL_READY_AT.put(player.getUUID(), now + COOLDOWN_TICKS);
@@ -175,7 +193,7 @@ public class ChronoThrowHandler {
         }
         target.level.playSound(null, target.getX(), target.getY(), target.getZ(),
                 SoundEvents.ENCHANTMENT_TABLE_USE, SoundCategory.PLAYERS, 0.9F, 1.4F);
-        owner.displayClientMessage(new StringTextComponent("\u00a7b+" + gain + " Time \u00a77(" + String.format("%.1f", lost) + " de vida)"), true);
+        Msg.bar(owner, TextFormatting.AQUA, "steal_gain", gain, Msg.f1(lost));
     }
 
     private static void throwOrb(ServerPlayerEntity player) {
@@ -187,7 +205,7 @@ public class ChronoThrowHandler {
         }
 
         if (!(BlockCloverBridge.getMana(player) > MANA_REQUIRED) || !(BlockCloverBridge.getTime(player) > TIME_REQUIRED)) {
-            player.displayClientMessage(new StringTextComponent("\u00a7cMana ou tempo insuficiente."), true);
+            Msg.bar(player, TextFormatting.RED, "no_mana_or_time");
             return;
         }
         READY_AT.put(player.getUUID(), now + COOLDOWN_TICKS);
