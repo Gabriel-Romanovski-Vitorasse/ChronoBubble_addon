@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["MVM", "DCD", "MVM"],
+  "key": {
+    "M": { "item": "minecraft:mossy_cobblestone" },
+    "V": { "item": "minecraft:vine" },
+    "D": { "item": "minecraft:diamond" },
+    "C": { "item": "minecraft:clock" }
+  },
+  "result": { "item": "chrono_bubble:swallowtail" }
+}

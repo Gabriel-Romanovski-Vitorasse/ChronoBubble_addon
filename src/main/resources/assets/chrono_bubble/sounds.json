@@ -1,0 +1,10 @@
+{
+  "stasis_start": {
+    "sounds": [ { "name": "chrono_bubble:stasis_start", "stream": false } ],
+    "subtitle": "chrono_bubble.subtitle.stasis_start"
+  },
+  "stasis_end": {
+    "sounds": [ { "name": "chrono_bubble:stasis_end", "stream": false } ],
+    "subtitle": "chrono_bubble.subtitle.stasis_end"
+  }
+}

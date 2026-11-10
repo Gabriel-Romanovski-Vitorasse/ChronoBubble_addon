@@ -1,0 +1,50 @@
+// Substitui o build.gradle do Forge MDK 1.16.5-36.2.39
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+    }
+}
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
+
+version = '1.0.0'
+group = 'com.gabriel.chronobubble'
+archivesBaseName = 'chrono_bubble-1.16.5'
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+
+minecraft {
+    mappings channel: 'official', version: '1.16.5'
+    runs {
+        client {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            mods { chrono_bubble { source sourceSets.main } }
+        }
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.16.5-36.2.39'
+}
+
+jar {
+    manifest {
+        attributes(["Specification-Title": "chrono_bubble", "Specification-Vendor": "Gabriel",
+                    "Specification-Version": "1", "Implementation-Title": project.name,
+                    "Implementation-Version": "${version}", "Implementation-Vendor": "Gabriel"])
+    }
+}
+jar.finalizedBy('reobfJar')
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}

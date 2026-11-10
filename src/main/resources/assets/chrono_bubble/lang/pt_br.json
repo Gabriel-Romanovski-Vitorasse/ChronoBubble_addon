@@ -1,0 +1,10 @@
+{
+  "chrono_bubble.subtitle.stasis_start": "O tempo para",
+  "chrono_bubble.subtitle.stasis_end": "O tempo volta a correr",
+  "key.chrono_bubble.zone": "Zona de Chrono Stasis (para projéteis)",
+  "key.categories.chrono_bubble": "Chrono Bubble",
+  "key.chrono_bubble.sustain": "Chrono Stasis sustentado (segurar ao arremessar)",
+  "item.chrono_bubble.swallowtail": "Swallowtail",
+  "key.chrono_bubble.config": "Abrir configuracoes do Chrono Bubble",
+  "key.chrono_bubble.accel": "Acelerar o tempo"
+}

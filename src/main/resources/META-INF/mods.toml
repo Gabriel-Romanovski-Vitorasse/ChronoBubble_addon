@@ -1,0 +1,33 @@
+modLoader="javafml"
+loaderVersion="[36,)"
+license="MIT"
+
+[[mods]]
+modId="chrono_bubble"
+version="1.0.0"
+displayName="Chrono Bubble (addon do Block Clover)"
+authors="Gabriel"
+description='''
+Desenha uma esfera de tempo com aneis de numerais romanos em volta de entidades sob o efeito Chrono Stasis do mod Block Clover.
+'''
+
+[[dependencies.chrono_bubble]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.16.5]"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.chrono_bubble]]
+    modId="forge"
+    mandatory=true
+    versionRange="[36,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.chrono_bubble]]
+    modId="block_clover"
+    mandatory=false
+    versionRange="[0.4,)"
+    ordering="AFTER"
+    side="BOTH"

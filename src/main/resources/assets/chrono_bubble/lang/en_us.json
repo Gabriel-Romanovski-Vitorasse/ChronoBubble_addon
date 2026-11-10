@@ -1,0 +1,10 @@
+{
+  "chrono_bubble.subtitle.stasis_start": "Time stops",
+  "chrono_bubble.subtitle.stasis_end": "Time resumes",
+  "key.chrono_bubble.zone": "Chrono Stasis zone (stops projectiles)",
+  "key.categories.chrono_bubble": "Chrono Bubble",
+  "key.chrono_bubble.sustain": "Sustained Chrono Stasis (hold while throwing)",
+  "item.chrono_bubble.swallowtail": "Swallowtail",
+  "key.chrono_bubble.config": "Open Chrono Bubble settings",
+  "key.chrono_bubble.accel": "Accelerate time"
+}

@@ -1,0 +1,32 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "chrono_bubble:item/swallowtail"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "chrono_bubble:charge": 0.001
+      },
+      "model": "chrono_bubble:item/swallowtail_1"
+    },
+    {
+      "predicate": {
+        "chrono_bubble:charge": 0.25
+      },
+      "model": "chrono_bubble:item/swallowtail_2"
+    },
+    {
+      "predicate": {
+        "chrono_bubble:charge": 0.6
+      },
+      "model": "chrono_bubble:item/swallowtail_3"
+    },
+    {
+      "predicate": {
+        "chrono_bubble:charge": 0.99
+      },
+      "model": "chrono_bubble:item/swallowtail_4"
+    }
+  ]
+}

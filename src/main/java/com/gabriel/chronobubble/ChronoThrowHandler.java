@@ -1,0 +1,204 @@
+package com.gabriel.chronobubble;
+
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvents;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.function.Consumer;
+
+/**
+ * Chrono Stasis arremess\u00e1vel: ao acionar o Chrono Stasis segurando Shift, o soco \u00e9 cancelado
+ * e uma esfera \u00e9 lan\u00e7ada no lugar. Mesmo slot, mesmas regras de custo do soco original.
+ */
+public class ChronoThrowHandler {
+    // ===== Ajustes f\u00e1ceis =====
+    public static boolean ENABLED = true;
+    public static float MANA_REQUIRED = 20.0F;   // o soco exige mais que isso
+    public static int   TIME_REQUIRED = 20;      // idem
+    public static float MANA_COST = 15.0F;
+    public static int   TIME_COST = 20;
+    public static int   EXPERIENCE_GAIN = 15;
+    public static float THROW_SPEED = 1.6F;
+    public static int   COOLDOWN_TICKS = 60;
+
+    // --- Time Steal arremess\u00e1vel ---
+    private static final String STEAL_CLASS = "com.yuanno.block_clover.spells.time.TimeStealAbility";
+    public static float STEAL_MANA_REQUIRED = 15.0F;   // o soco exige mais que isso
+    public static float STEAL_MANA_COST = 15.0F;
+    public static int   STEAL_EXPERIENCE = 15;
+    /** Vida m\u00e1xima drenada por acerto (1 cora\u00e7\u00e3o = 2). */
+    public static float STEAL_DRAIN_HP = 10.0F;
+    /** Quanto de Time cada ponto de vida drenada rende. */
+    public static float STEAL_TIME_PER_HP = 3.0F;
+    public static int TIME_MAX = 0;   // 0 = sem limite
+
+    private static final String HOP_CLASS = "com.yuanno.block_clover.spells.time.TimeHopAbility";
+    private static final String GRIGORA_CLASS = "com.yuanno.block_clover.spells.time.ChronoStasisGrigoraAbility";
+    private static final String ABILITY_CLASS = "com.yuanno.block_clover.spells.time.ChronoStasisAbility";
+    private static final org.apache.logging.log4j.Logger LOGGER = org.apache.logging.log4j.LogManager.getLogger();
+    private static final Map<UUID, Long> READY_AT = new HashMap<>();
+    private static final Map<UUID, Long> STEAL_READY_AT = new HashMap<>();
+
+    /** Escuta o AbilityUseEvent.Pre do Block Clover sem precisar do .jar dele para compilar. */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public static void register() {
+        if (!ENABLED) return;
+        MinecraftForge.EVENT_BUS.addListener(ChronoThrowHandler::onPlayerTick);
+        try {
+            Class<?> pre = Class.forName("com.yuanno.block_clover.api.ability.AbilityUseEvent", false, ChronoThrowHandler.class.getClassLoader());
+            Consumer<Event> handler = ChronoThrowHandler::onAbilityUse;
+            MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGH, false, (Class) pre, (Consumer) handler);
+            LOGGER.info("[ChronoBubble] Escuta de AbilityUseEvent registrada.");
+        } catch (Throwable t) {
+            LOGGER.warn("[ChronoBubble] Nao consegui registrar o arremesso: " + t);
+            // Block Clover ausente ou diferente: o arremesso simplesmente n\u00e3o existe
+        }
+    }
+
+    private static String cooldownBar(long remaining, String label) {
+        int total = 10;
+        int filled = (int) Math.max(0, Math.min(total, total - Math.round(remaining * (double) total / COOLDOWN_TICKS)));
+        StringBuilder b = new StringBuilder("\u00a73" + label + " \u00a78[\u00a7b");
+        for (int i = 0; i < total; i++) { if (i == filled) b.append("\u00a77"); b.append("|"); }
+        return b.append("\u00a78] \u00a77").append(String.format("%.1fs", remaining / 20.0)).toString();
+    }
+
+    /** A cada tick do servidor: mostra a recarga andando e avisa (com som) quando fica pronto. */
+    private static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || event.player.level.isClientSide) return;
+        tickCooldown(event.player, READY_AT, "Chrono Stasis");
+        tickCooldown(event.player, STEAL_READY_AT, "Time Steal");
+    }
+
+    private static void tickCooldown(PlayerEntity player, Map<UUID, Long> map, String label) {
+        Long ready = map.get(player.getUUID());
+        if (ready == null) return;
+        long now = player.level.getGameTime();
+        if (now >= ready) {
+            map.remove(player.getUUID());
+            player.displayClientMessage(new StringTextComponent("\u00a7b\u2726 " + label + " pronto"), true);
+            player.level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                    SoundEvents.EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.6F, 1.8F);
+        } else if ((ready - now) % 4 == 0) {
+            player.displayClientMessage(new StringTextComponent(cooldownBar(ready - now, label)), true);
+        }
+    }
+
+    private static void onAbilityUse(Event event) {
+        if (!ENABLED) return;
+        if (!(event instanceof PlayerEvent)) return;
+        PlayerEntity player = ((PlayerEvent) event).getPlayer();
+        if (player.level.isClientSide || !(player instanceof ServerPlayerEntity)) return;
+        String name = BlockCloverBridge.abilityClassName(event);
+        boolean stasis = ABILITY_CLASS.equals(name);
+        boolean steal = STEAL_CLASS.equals(name);
+        boolean grigora = GRIGORA_CLASS.equals(name);
+        if (HOP_CLASS.equals(name)) {                   // Time Hop original: s\u00f3 acrescenta os efeitos
+            TimeHopEffects.noteUse((ServerPlayerEntity) player);
+            return;
+        }
+        if (!stasis && !steal && !grigora) return;
+        LOGGER.info("[ChronoBubble] " + name + " usado. Shift=" + player.isShiftKeyDown());
+
+        if (grigora) {                                  // Alt + Grigora = vers\u00e3o sustentada em \u00e1rea
+            if (!SustainedStasis.GRIGORA_ENABLED || !SustainedStasis.holdsTrigger(player)) return;
+            try {
+                event.setCanceled(true);
+            } catch (Throwable t) {
+                return;
+            }
+            SustainedStasis.beginArea((ServerPlayerEntity) player);
+            return;
+        }
+
+        if (!player.isShiftKeyDown()) return;
+        try {
+            event.setCanceled(true);                    // cancela o soco: aqui \u00e9 o arremesso
+        } catch (Throwable t) {
+            return;                                     // evento n\u00e3o cancel\u00e1vel: deixa o soco normal
+        }
+        if (steal) throwSteal((ServerPlayerEntity) player); else throwOrb((ServerPlayerEntity) player);
+    }
+
+    /** Time Steal arremess\u00e1vel: a esfera, ao acertar, drena vida do alvo e a converte em Time para o dono. */
+    private static void throwSteal(ServerPlayerEntity player) {
+        long now = player.level.getGameTime();
+        Long ready = STEAL_READY_AT.get(player.getUUID());
+        if (ready != null && now < ready) {
+            player.displayClientMessage(new StringTextComponent(cooldownBar(ready - now, "Time Steal")), true);
+            return;
+        }
+        if (!(BlockCloverBridge.getMana(player) > STEAL_MANA_REQUIRED)) {
+            player.displayClientMessage(new StringTextComponent("\u00a7cMana insuficiente."), true);
+            return;
+        }
+        if (TIME_MAX > 0 && BlockCloverBridge.getTime(player) >= TIME_MAX) {
+            player.displayClientMessage(new StringTextComponent("\u00a77Seu Time j\u00e1 est\u00e1 cheio."), true);
+            return;
+        }
+        STEAL_READY_AT.put(player.getUUID(), now + COOLDOWN_TICKS);
+        BlockCloverBridge.spend(player, STEAL_MANA_COST, 0, STEAL_EXPERIENCE);
+        BlockCloverBridge.syncToClient(player);
+
+        StasisOrbEntity orb = new StasisOrbEntity(ChronoBubbleMod.STASIS_ORB.get(), player.level, player);
+        orb.steal = true;
+        orb.shootFromRotation(player, player.xRot, player.yRot, 0.0F, THROW_SPEED, 0.5F);
+        player.level.addFreshEntity(orb);
+        player.level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.ENDER_PEARL_THROW, SoundCategory.PLAYERS, 0.8F, 0.8F);
+    }
+
+    /** Chamado pela esfera de Time Steal ao acertar: vida do alvo vira Time do dono. */
+    public static void stealLife(ServerPlayerEntity owner, net.minecraft.entity.Entity orb, net.minecraft.entity.LivingEntity target) {
+        float before = target.getHealth();
+        SustainedStasis.hurtDirect(target, net.minecraft.util.DamageSource.indirectMagic(orb, owner), Math.min(STEAL_DRAIN_HP, before));
+        float lost = Math.max(0.0F, before - Math.max(0.0F, target.getHealth()));
+        int room = TIME_MAX > 0 ? TIME_MAX - Math.max(0, BlockCloverBridge.getTime(owner)) : Integer.MAX_VALUE;
+        int gain = Math.min(room, Math.round(lost * STEAL_TIME_PER_HP));
+        if (gain > 0) {
+            BlockCloverBridge.spend(owner, 0.0F, -gain, 0);          // tempo negativo = ganha Time
+            BlockCloverBridge.syncToClient(owner);
+        }
+        if (target.level instanceof net.minecraft.world.server.ServerWorld) {
+            ((net.minecraft.world.server.ServerWorld) target.level).sendParticles(net.minecraft.particles.ParticleTypes.SOUL,
+                    target.getX(), target.getY() + target.getBbHeight() * 0.5D, target.getZ(), 14, 0.3D, 0.4D, 0.3D, 0.05D);
+        }
+        target.level.playSound(null, target.getX(), target.getY(), target.getZ(),
+                SoundEvents.ENCHANTMENT_TABLE_USE, SoundCategory.PLAYERS, 0.9F, 1.4F);
+        owner.displayClientMessage(new StringTextComponent("\u00a7b+" + gain + " Time \u00a77(" + String.format("%.1f", lost) + " de vida)"), true);
+    }
+
+    private static void throwOrb(ServerPlayerEntity player) {
+        long now = player.level.getGameTime();
+        Long ready = READY_AT.get(player.getUUID());
+        if (ready != null && now < ready) {             // em recarga
+            player.displayClientMessage(new StringTextComponent(cooldownBar(ready - now, "Chrono Stasis")), true);
+            return;
+        }
+
+        if (!(BlockCloverBridge.getMana(player) > MANA_REQUIRED) || !(BlockCloverBridge.getTime(player) > TIME_REQUIRED)) {
+            player.displayClientMessage(new StringTextComponent("\u00a7cMana ou tempo insuficiente."), true);
+            return;
+        }
+        READY_AT.put(player.getUUID(), now + COOLDOWN_TICKS);
+        BlockCloverBridge.spend(player, MANA_COST, TIME_COST, EXPERIENCE_GAIN);
+        BlockCloverBridge.syncToClient(player);
+
+        StasisOrbEntity orb = new StasisOrbEntity(ChronoBubbleMod.STASIS_ORB.get(), player.level, player);
+        orb.sustained = SustainedStasis.ENABLED && SustainedStasis.holdsTrigger(player);
+        orb.shootFromRotation(player, player.xRot, player.yRot, 0.0F, THROW_SPEED, 0.5F);
+        player.level.addFreshEntity(orb);
+        player.level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.ENDER_PEARL_THROW, SoundCategory.PLAYERS, 0.8F, 1.3F);
+    }
+}
