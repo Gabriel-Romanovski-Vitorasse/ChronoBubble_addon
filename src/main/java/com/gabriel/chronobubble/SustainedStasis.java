@@ -12,7 +12,7 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
@@ -125,8 +125,7 @@ public class SustainedStasis {
         if (!ENABLED || effect == null || target == caster) return;
         Session s = SESSIONS.computeIfAbsent(caster.getUUID(), k -> new Session(MANA_PER_SECOND, MAX_TARGETS));
         addTarget(s, caster, target, effect);
-        caster.displayClientMessage(new StringTextComponent("\u00a7bChrono Stasis sustentado \u00a77(" + s.targets.size() + "/" + s.max
-                + " alvos, " + String.format("%.1f", s.cost * s.targets.size()) + " mana/s)"), true);
+        Msg.bar(caster, TextFormatting.AQUA, "sustain_on", s.targets.size(), s.max, Msg.f1(s.cost * s.targets.size()));
     }
 
     /** Alt + Grigora: prende todos em volta. Chamado no lugar do Grigora original (que \u00e9 cancelado). */
@@ -136,12 +135,11 @@ public class SustainedStasis {
         long now = caster.level.getGameTime();
         Long ready = GRIGORA_READY.get(caster.getUUID());
         if (ready != null && now < ready) {
-            caster.displayClientMessage(new StringTextComponent("\u00a77Chrono Stasis Grigora em recarga: "
-                    + String.format("%.1fs", (ready - now) / 20.0)), true);
+            Msg.bar(caster, TextFormatting.GRAY, "grigora_cooldown", Msg.f1((ready - now) / 20.0));
             return;
         }
         if (!(BlockCloverBridge.getTime(caster) > GRIGORA_TIME_COST)) {
-            caster.displayClientMessage(new StringTextComponent("\u00a7cTime insuficiente."), true);
+            Msg.bar(caster, TextFormatting.RED, "no_time");
             return;
         }
         final double r = GRIGORA_RADIUS;
@@ -149,17 +147,17 @@ public class SustainedStasis {
                 e -> e != caster && e.isAlive() && e.distanceToSqr(caster) <= r * r
                         && !(GRIGORA_SKIP_BOSSES && (e instanceof EnderDragonEntity || e instanceof WitherEntity)));
         if (found.isEmpty()) {
-            caster.displayClientMessage(new StringTextComponent("\u00a77Ningu\u00e9m por perto."), true);
+            Msg.bar(caster, TextFormatting.GRAY, "nobody_near");
             return;
         }
         found.sort(Comparator.comparingDouble(e -> e.distanceToSqr(caster)));
         if (found.size() > GRIGORA_MAX_TARGETS) found = new ArrayList<>(found.subList(0, GRIGORA_MAX_TARGETS));
         if (!(BlockCloverBridge.getMana(caster) >= GRIGORA_MANA_PER_SECOND * found.size())) {
-            caster.displayClientMessage(new StringTextComponent("\u00a7cMana insuficiente."), true);
+            Msg.bar(caster, TextFormatting.RED, "no_mana");
             return;
         }
 
-        end(caster.getUUID(), null);
+        end(caster.getUUID(), null, null);
         BlockCloverBridge.spend(caster, 0.0F, GRIGORA_TIME_COST, 0);
         BlockCloverBridge.syncToClient(caster);
         GRIGORA_READY.put(caster.getUUID(), now + GRIGORA_COOLDOWN_TICKS);
@@ -169,12 +167,11 @@ public class SustainedStasis {
         for (LivingEntity t : found) addTarget(s, caster, t, effect);
         caster.level.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
                 ChronoBubbleMod.STASIS_START.get(), SoundCategory.PLAYERS, 1.2F, 0.7F);
-        caster.displayClientMessage(new StringTextComponent("\u00a7bChrono Stasis Grigora sustentado \u00a77(" + s.targets.size()
-                + " alvos, " + String.format("%.1f", s.cost * s.targets.size()) + " mana/s)"), true);
+        Msg.bar(caster, TextFormatting.AQUA, "grigora_on", s.targets.size(), Msg.f1(s.cost * s.targets.size()));
     }
 
-    /** Solta todos os alvos. {@code reason} (pode ser null) vai para a action bar do jogador. */
-    public static void end(UUID casterId, String reason) {
+    /** Solta todos os alvos. {@code key} (pode ser null) \u00e9 a mensagem traduz\u00edvel da action bar do jogador. */
+    public static void end(UUID casterId, TextFormatting color, String key) {
         Session s = SESSIONS.remove(casterId);
         if (s == null) return;
         PlayerEntity owner = null;
@@ -182,7 +179,7 @@ public class SustainedStasis {
             if (owner == null) owner = t.level.getPlayerByUUID(casterId);
             release(t);
         }
-        if (reason != null && owner != null) owner.displayClientMessage(new StringTextComponent(reason), true);
+        if (key != null && owner != null) Msg.bar(owner, color, key);
     }
 
     /** Solta um alvo e aplica de uma vez o dano que ele recebeu enquanto estava parado. */
@@ -243,7 +240,7 @@ public class SustainedStasis {
         }
         if (src.getEntity() instanceof ServerPlayerEntity) {
             ((ServerPlayerEntity) src.getEntity()).displayClientMessage(
-                    new StringTextComponent("\u00a7bDano guardado: \u00a7f" + String.format("%.1f", total)), true);
+                    Msg.tr(TextFormatting.AQUA, "stored_damage", Msg.f1(total)), true);
         }
     }
 
@@ -254,8 +251,8 @@ public class SustainedStasis {
         if (s == null) return;
         PlayerEntity player = event.player;
 
-        if (!player.isAlive()) { end(player.getUUID(), null); return; }
-        if (!BlockCloverBridge.isInCombat(player)) { end(player.getUUID(), "\u00a77Combat bar desativada: o tempo voltou a correr."); return; }
+        if (!player.isAlive()) { end(player.getUUID(), null, null); return; }
+        if (!BlockCloverBridge.isInCombat(player)) { end(player.getUUID(), TextFormatting.GRAY, "sustain_combat_off"); return; }
 
         // alvos que morreram ou sa\u00edram do mundo s\u00e3o soltos um a um
         Iterator<LivingEntity> it = s.targets.iterator();
@@ -263,13 +260,13 @@ public class SustainedStasis {
             LivingEntity t = it.next();
             if (!t.isAlive() || t.level != player.level) { release(t); it.remove(); }
         }
-        if (s.targets.isEmpty()) { end(player.getUUID(), "\u00a77Nenhum alvo preso."); return; }
+        if (s.targets.isEmpty()) { end(player.getUUID(), TextFormatting.GRAY, "sustain_no_targets"); return; }
 
         float rate = s.cost * s.targets.size();
         s.ticks++;
         if (s.ticks % 20 == 0) {
             if (BlockCloverBridge.getMana(player) < rate) {
-                end(player.getUUID(), "\u00a7cSem mana: o tempo voltou a correr.");
+                end(player.getUUID(), TextFormatting.RED, "sustain_no_mana");
                 return;
             }
             BlockCloverBridge.spend(player, rate, 0, 0);
@@ -284,8 +281,7 @@ public class SustainedStasis {
                 for (LivingEntity t : s.targets) sendUnstable(t, unstable);
             }
             if (unstable && s.ticks % 20 == 0) {
-                player.displayClientMessage(new StringTextComponent(
-                        "\u00a7c\u26a0 Tempo inst\u00e1vel \u00a77\u2014 " + String.format("%.0f", Math.max(0.0F, seconds)) + "s de mana"), true);
+                Msg.bar(player, TextFormatting.RED, "sustain_unstable", Math.round(Math.max(0.0F, seconds)));
                 player.level.playSound(null, player.getX(), player.getY(), player.getZ(),
                         SoundEvents.NOTE_BLOCK_BASS, SoundCategory.PLAYERS, 0.8F, 0.6F);
             }
@@ -294,18 +290,19 @@ public class SustainedStasis {
 
     @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
-        if (event.getEntityLiving() instanceof ServerPlayerEntity) end(event.getEntityLiving().getUUID(), null);
+        if (event.getEntityLiving() instanceof ServerPlayerEntity) end(event.getEntityLiving().getUUID(), null, null);
     }
 
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         HELD.remove(event.getPlayer().getUUID());
-        end(event.getPlayer().getUUID(), null);
+        end(event.getPlayer().getUUID(), null, null);
+        ChronoThrowHandler.forgetExpired(GRIGORA_READY, event.getPlayer().getUUID(), event.getPlayer().level.getGameTime());
     }
 
     @SubscribeEvent
     public static void onServerStopping(FMLServerStoppingEvent event) {
-        for (UUID id : new ArrayList<>(SESSIONS.keySet())) end(id, null);
+        for (UUID id : new ArrayList<>(SESSIONS.keySet())) end(id, null, null);
         ACCUM.clear();
         OWNER.clear();
     }

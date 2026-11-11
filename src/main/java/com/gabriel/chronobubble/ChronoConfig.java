@@ -95,8 +95,8 @@ public class ChronoConfig {
     // --- Swallowtail ---
     private static final ForgeConfigSpec.IntValue SWALLOW_CAPACITY, SWALLOW_TRANSFER;
     // --- Renascimento ---
-    private static final ForgeConfigSpec.BooleanValue REBIRTH_ENABLED, REBIRTH_BLOCK_REGEN, REBIRTH_RESERVE;
-    private static final ForgeConfigSpec.IntValue REBIRTH_UNLOCK_TIME, REBIRTH_REBORN_TIME, REBIRTH_RESERVE_COST;
+    private static final ForgeConfigSpec.BooleanValue REBIRTH_ENABLED, REBIRTH_BLOCK_REGEN;
+    private static final ForgeConfigSpec.IntValue REBIRTH_UNLOCK_TIME;
     // --- Visual / HUD ---
     private static final ForgeConfigSpec.BooleanValue HUD_TIME_GAIN, HIDE_PARTICLES;
     private static final ForgeConfigSpec.IntValue HUD_MIN_GAIN;
@@ -200,13 +200,10 @@ public class ChronoConfig {
         SWALLOW_TRANSFER = integer(b, "transfer_per_use", "Time por clique", "Time que passa por clique", 100, 1, 100000);
         b.pop();
 
-        section(b, "rebirth", "Renascimento", "Renascimento (grimorio de uma pagina apos morrer)");
+        section(b, "rebirth", "Renascimento", "Renascimento (grimorio de uma pagina apos morrer). So acontece se houver Time guardado na Swallowtail; ao renascer, o Time do jogador e o da Swallowtail zeram.");
         REBIRTH_ENABLED = bool(b, "enabled", "Ligado", "Liga/desliga o renascimento", true);
         REBIRTH_UNLOCK_TIME = integer(b, "unlock_time", "Time para desbloquear", "Time necessario para os poderes e o grimorio voltarem", 200, 0, 1000000);
-        REBIRTH_REBORN_TIME = integer(b, "reborn_time", "Time ao renascer", "Time com que voce renasce", 0, 0, 1000000);
         REBIRTH_BLOCK_REGEN = bool(b, "block_passive_regen", "Sem regeneracao passiva", "true = sem regeneracao passiva de Time ate desbloquear", true);
-        REBIRTH_RESERVE = bool(b, "swallowtail_reserve", "Reserva do Swallowtail", "true = ao morrer, o Swallowtail no inventario gasta Time guardado para pular ou reduzir o renascimento", true);
-        REBIRTH_RESERVE_COST = integer(b, "reserve_cost", "Custo da reserva", "Time tirado do Swallowtail ao morrer. Se cobrir o 'Time para desbloquear', o renascimento e pulado; se for menos, vira Time inicial.", 200, 0, 1000000);
         b.pop();
 
         section(b, "visual", "Visual e HUD", "Visual e HUD");
@@ -299,10 +296,7 @@ public class ChronoConfig {
 
         RebirthHandler.ENABLED = REBIRTH_ENABLED.get();
         RebirthHandler.UNLOCK_TIME = REBIRTH_UNLOCK_TIME.get();
-        RebirthHandler.REBORN_TIME = REBIRTH_REBORN_TIME.get();
         RebirthHandler.BLOCK_PASSIVE_REGEN = REBIRTH_BLOCK_REGEN.get();
-        RebirthHandler.SWALLOWTAIL_RESERVE = REBIRTH_RESERVE.get();
-        RebirthHandler.RESERVE_COST = REBIRTH_RESERVE_COST.get();
 
         TimeGainWatcher.MAX_TIME = MAX_TIME_CFG.get();
         ChronoThrowHandler.TIME_MAX = MAX_TIME_CFG.get();

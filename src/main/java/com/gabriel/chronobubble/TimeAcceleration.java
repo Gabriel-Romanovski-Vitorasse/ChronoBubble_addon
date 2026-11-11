@@ -9,7 +9,7 @@ import net.minecraft.potion.EffectInstance;
 import net.minecraft.potion.Effects;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -52,40 +52,40 @@ public class TimeAcceleration {
     public static void toggle(ServerPlayerEntity player) {
         if (!ENABLED) return;
         if (ACTIVE.containsKey(player.getUUID())) {
-            stop(player, "\u00a77O tempo voltou ao ritmo normal.");
+            stop(player, TextFormatting.GRAY, "accel_off");
             return;
         }
         long now = player.level.getGameTime();
         Long ready = READY_AT.get(player.getUUID());
         if (ready != null && now < ready) {
-            player.displayClientMessage(new StringTextComponent("\u00a77Acelera\u00e7\u00e3o em recarga: "
-                    + String.format("%.1fs", (ready - now) / 20.0)), true);
+            Msg.bar(player, TextFormatting.GRAY, "accel_cooldown", Msg.f1((ready - now) / 20.0));
             return;
         }
         if (!BlockCloverBridge.hasChronoStasis(player)) {
-            player.displayClientMessage(new StringTextComponent("\u00a7cVoc\u00ea n\u00e3o tem o poder para isso agora."), true);
+            Msg.bar(player, TextFormatting.RED, "no_power");
             return;
         }
         if (!BlockCloverBridge.isInCombat(player)) {
-            player.displayClientMessage(new StringTextComponent("\u00a7cAtive a combat bar primeiro."), true);
+            Msg.bar(player, TextFormatting.RED, "need_combat");
             return;
         }
         if (!(BlockCloverBridge.getMana(player) > MANA_TO_START)) {
-            player.displayClientMessage(new StringTextComponent("\u00a7cMana insuficiente."), true);
+            Msg.bar(player, TextFormatting.RED, "no_mana");
             return;
         }
         ACTIVE.put(player.getUUID(), 0);
         player.level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 ChronoBubbleMod.STASIS_START.get(), SoundCategory.PLAYERS, 0.8F, 1.6F);
-        player.displayClientMessage(new StringTextComponent("\u00a7bTempo acelerado \u00a77(" + (int) MANA_PER_SECOND + " mana/s)"), true);
+        Msg.bar(player, TextFormatting.AQUA, "accel_on", Msg.rate(MANA_PER_SECOND));
     }
 
-    private static void stop(PlayerEntity player, String message) {
+    /** Termina a acelera\u00e7\u00e3o e come\u00e7a a recarga. {@code key} (pode ser null) \u00e9 a mensagem traduz\u00edvel. */
+    private static void stop(PlayerEntity player, TextFormatting color, String key) {
         if (ACTIVE.remove(player.getUUID()) == null) return;
         READY_AT.put(player.getUUID(), player.level.getGameTime() + COOLDOWN_TICKS);
         player.level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 ChronoBubbleMod.STASIS_END.get(), SoundCategory.PLAYERS, 0.8F, 1.6F);
-        if (message != null) player.displayClientMessage(new StringTextComponent(message), true);
+        if (key != null) Msg.bar(player, color, key);
     }
 
     @SubscribeEvent
@@ -96,25 +96,25 @@ public class TimeAcceleration {
         if (ticks == null) return;
 
         if (!player.isAlive()) { ACTIVE.remove(player.getUUID()); return; }
-        if (!BlockCloverBridge.isInCombat(player)) { stop(player, "\u00a77Combat bar desativada: o tempo voltou ao normal."); return; }
-        if (!BlockCloverBridge.hasChronoStasis(player)) { stop(player, null); return; }
+        if (!BlockCloverBridge.isInCombat(player)) { stop(player, TextFormatting.GRAY, "accel_combat_off"); return; }
+        if (!BlockCloverBridge.hasChronoStasis(player)) { stop(player, null, null); return; }
 
         ticks++;
         ACTIVE.put(player.getUUID(), ticks);
 
         if (ticks % 20 == 0) {
             if (BlockCloverBridge.getMana(player) < MANA_PER_SECOND) {
-                stop(player, "\u00a7cSem mana: a acelera\u00e7\u00e3o terminou.");
+                stop(player, TextFormatting.RED, "accel_no_mana");
                 return;
             }
             BlockCloverBridge.spend(player, MANA_PER_SECOND, 0, 0);
             if (player instanceof ServerPlayerEntity) BlockCloverBridge.syncToClient(player);
             if (MAX_SECONDS > 0 && ticks / 20 >= MAX_SECONDS) {
-                stop(player, "\u00a77A acelera\u00e7\u00e3o chegou ao limite.");
+                stop(player, TextFormatting.GRAY, "accel_limit");
                 return;
             }
-            String left = MAX_SECONDS > 0 ? " \u00a77\u2014 " + Math.max(0, MAX_SECONDS - ticks / 20) + "s" : "";
-            player.displayClientMessage(new StringTextComponent("\u00a7bTempo acelerado" + left), true);
+            if (MAX_SECONDS > 0) Msg.bar(player, TextFormatting.AQUA, "accel_left", Math.max(0, MAX_SECONDS - ticks / 20));
+            else Msg.bar(player, TextFormatting.AQUA, "accel_active");
         }
 
         if (ticks % 10 == 0) {
@@ -146,6 +146,7 @@ public class TimeAcceleration {
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         ACTIVE.remove(event.getPlayer().getUUID());
+        ChronoThrowHandler.forgetExpired(READY_AT, event.getPlayer().getUUID(), event.getPlayer().level.getGameTime());
     }
 
     @SubscribeEvent

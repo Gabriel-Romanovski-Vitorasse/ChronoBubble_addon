@@ -2,6 +2,7 @@ package com.gabriel.chronobubble;
 
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.MobEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.potion.Effect;
 import net.minecraft.potion.EffectInstance;
 import net.minecraft.util.ResourceLocation;
@@ -9,6 +10,7 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.PotionEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.network.PacketDistributor;
@@ -91,6 +93,23 @@ public class StasisSync {
             unfreezeAi(event.getEntityLiving());
             StasisField.FROZEN.remove(event.getEntityLiving().getId());
         }
+    }
+
+    /**
+     * Quem passa a ver uma entidade j\u00e1 congelada (chegou perto, trocou de dimens\u00e3o, renasceu) recebe o estado dela.
+     * Antes, a esfera s\u00f3 aparecia para quem j\u00e1 estava por perto no momento em que o efeito come\u00e7ou.
+     */
+    @SubscribeEvent
+    public static void onStartTracking(PlayerEvent.StartTracking event) {
+        if (!(event.getTarget() instanceof LivingEntity) || !(event.getPlayer() instanceof ServerPlayerEntity)) return;
+        Effect effect = ForgeRegistries.POTIONS.getValue(EFFECT_ID);
+        if (effect == null) return;
+        LivingEntity target = (LivingEntity) event.getTarget();
+        EffectInstance inst = target.getEffect(effect);
+        if (inst == null) return;
+        ServerPlayerEntity viewer = (ServerPlayerEntity) event.getPlayer();
+        ChronoBubbleMod.CHANNEL.send(PacketDistributor.PLAYER.with(() -> viewer),
+                new StasisPacket(target.getId(), inst.getDuration()));
     }
 
     /** Seguran\u00e7a: se um mob marcado volta ao mundo (recarregou o jogo) sem o efeito, religa a IA dele. */

@@ -4,7 +4,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -73,32 +73,33 @@ public class ChronoZone {
     public static void toggle(ServerPlayerEntity player) {
         if (!ENABLED) return;
         if (ACTIVE.containsKey(player.getUUID())) {
-            stop(player, "\u00a77Zona de Chrono Stasis desligada.");
+            stop(player, TextFormatting.GRAY, "zone_off");
             return;
         }
         if (!BlockCloverBridge.hasChronoStasis(player)) {
-            player.displayClientMessage(new StringTextComponent("\u00a7cVoc\u00ea n\u00e3o tem o Chrono Stasis."), true);
+            Msg.bar(player, TextFormatting.RED, "no_stasis");
             return;
         }
         if (!BlockCloverBridge.isInCombat(player)) {
-            player.displayClientMessage(new StringTextComponent("\u00a7cAtive a combat bar primeiro."), true);
+            Msg.bar(player, TextFormatting.RED, "need_combat");
             return;
         }
         if (!(BlockCloverBridge.getMana(player) > MANA_TO_START)) {
-            player.displayClientMessage(new StringTextComponent("\u00a7cMana insuficiente."), true);
+            Msg.bar(player, TextFormatting.RED, "no_mana");
             return;
         }
         ACTIVE.put(player.getUUID(), 0);
         send(player, true);
         sound(player, true);
-        player.displayClientMessage(new StringTextComponent("\u00a7bZona de Chrono Stasis \u00a77(" + (int) MANA_PER_SECOND + " mana/s)"), true);
+        Msg.bar(player, TextFormatting.AQUA, "zone_on", Msg.rate(MANA_PER_SECOND));
     }
 
-    private static void stop(PlayerEntity player, String message) {
+    /** Desliga a zona. {@code key} (pode ser null) \u00e9 a mensagem traduz\u00edvel da action bar. */
+    private static void stop(PlayerEntity player, TextFormatting color, String key) {
         if (ACTIVE.remove(player.getUUID()) == null) return;
         send(player, false);
         sound(player, false);
-        if (message != null) player.displayClientMessage(new StringTextComponent(message), true);
+        if (key != null) Msg.bar(player, color, key);
     }
 
     @SubscribeEvent
@@ -109,20 +110,20 @@ public class ChronoZone {
         if (ticks == null) return;
 
         if (!player.isAlive()) { ACTIVE.remove(player.getUUID()); return; }
-        if (!BlockCloverBridge.isInCombat(player)) { stop(player, "\u00a77Combat bar desativada: zona desligada."); return; }
-        if (!BlockCloverBridge.hasChronoStasis(player)) { stop(player, null); return; }   // ex.: renascido
+        if (!BlockCloverBridge.isInCombat(player)) { stop(player, TextFormatting.GRAY, "zone_combat_off"); return; }
+        if (!BlockCloverBridge.hasChronoStasis(player)) { stop(player, null, null); return; }   // ex.: renascido
 
         ticks++;
         ACTIVE.put(player.getUUID(), ticks);
         if (ticks % 20 == 0) {
             if (BlockCloverBridge.getMana(player) < MANA_PER_SECOND) {
-                stop(player, "\u00a7cSem mana: a zona se desfez.");
+                stop(player, TextFormatting.RED, "zone_no_mana");
                 return;
             }
             BlockCloverBridge.spend(player, MANA_PER_SECOND, 0, 0);
             if (player instanceof ServerPlayerEntity) BlockCloverBridge.syncToClient(player);
             if (BlockCloverBridge.getMana(player) / MANA_PER_SECOND <= 3.0F) {
-                player.displayClientMessage(new StringTextComponent("\u00a7c\u26a0 Zona inst\u00e1vel \u2014 mana acabando"), true);
+                Msg.bar(player, TextFormatting.RED, "zone_unstable");
                 player.level.playSound(null, player.getX(), player.getY(), player.getZ(),
                         SoundEvents.NOTE_BLOCK_BASS, SoundCategory.PLAYERS, 0.8F, 0.6F);
             }
@@ -151,6 +152,12 @@ public class ChronoZone {
             ChronoBubbleMod.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity) event.getPlayer()),
                     new ZoneStatePacket(target.getId(), true));
         }
+    }
+
+    /** Trocou de dimens\u00e3o com a zona ligada: o cliente limpou o estado, ent\u00e3o manda de novo. */
+    @SubscribeEvent
+    public static void onDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (ACTIVE.containsKey(event.getPlayer().getUUID())) send(event.getPlayer(), true);
     }
 
     @SubscribeEvent

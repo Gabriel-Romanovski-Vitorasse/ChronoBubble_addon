@@ -23,6 +23,7 @@ import net.minecraftforge.event.entity.living.LivingKnockBackEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.server.FMLServerStoppingEvent;
 import net.minecraftforge.fml.network.PacketDistributor;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -130,6 +131,7 @@ public class TimeHopEffects {
             pulse.grav.add(s.isNoGravity());
             s.setNoGravity(true);
             s.setDeltaMovement(Vector3d.ZERO);
+            s.hurtMarked = true;                     // manda a velocidade nova para os clientes
         }
         PULSES.add(pulse);
         w.playSound(null, p.getX(), p.getY(), p.getZ(), ChronoBubbleMod.STASIS_START.get(),
@@ -154,20 +156,40 @@ public class TimeHopEffects {
             }
             for (int i = 0; i < pu.shots.size(); i++) {
                 ProjectileEntity s = pu.shots.get(i);
-                if (s.isAlive()) s.setDeltaMovement(Vector3d.ZERO);
+                if (s.isAlive()) { s.setDeltaMovement(Vector3d.ZERO); s.hurtMarked = true; }
             }
             if (pu.age >= pu.total) {
-                for (int i = 0; i < pu.shots.size(); i++) {
-                    ProjectileEntity s = pu.shots.get(i);
-                    if (!s.isAlive()) continue;
-                    s.setNoGravity(pu.grav.get(i));
-                    s.setDeltaMovement(pu.motion.get(i));
-                }
+                releaseShots(pu);
                 pu.world.playSound(null, pu.at.x, pu.at.y, pu.at.z, ChronoBubbleMod.STASIS_END.get(),
                         SoundCategory.PLAYERS, 0.8F, 1.2F);
                 it.remove();
             }
         }
+    }
+
+    /** Devolve aos proj\u00e9teis do pulso a velocidade e a gravidade que tinham antes. */
+    private static void releaseShots(Pulse pu) {
+        for (int i = 0; i < pu.shots.size(); i++) {
+            ProjectileEntity s = pu.shots.get(i);
+            if (!s.isAlive()) continue;
+            s.setNoGravity(pu.grav.get(i));
+            s.setDeltaMovement(pu.motion.get(i));
+            s.hurtMarked = true;
+        }
+    }
+
+    /**
+     * O servidor vai fechar: solta os proj\u00e9teis antes de o mundo ser salvo (sen\u00e3o eles ficariam parados no ar
+     * para sempre, sem gravidade) e esquece tudo. Sem isso, os pulsos ficavam guardando o mundo antigo e
+     * continuavam rodando no pr\u00f3ximo mundo aberto no singleplayer.
+     */
+    @SubscribeEvent
+    public static void onServerStopping(FMLServerStoppingEvent event) {
+        for (Pulse pu : PULSES) releaseShots(pu);
+        PULSES.clear();
+        PENDING.clear();
+        NO_FALL.clear();
+        PROTECT.clear();
     }
 
     private static boolean active(Map<UUID, Long> map, Entity e) {
@@ -190,6 +212,7 @@ public class TimeHopEffects {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onAttack(LivingAttackEvent event) {
         if (event.getEntityLiving().level.isClientSide) return;
+        if (event.getSource().isBypassInvul()) return;          // vazio e /kill passam normalmente
         if (event.getEntityLiving() instanceof PlayerEntity && active(PROTECT, event.getEntityLiving())) {
             event.setCanceled(true);
         }

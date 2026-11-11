@@ -13,7 +13,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 
@@ -23,6 +23,7 @@ import java.util.List;
 /**
  * Swallowtail: artefato que armazena Time. Clique direito guarda Time nele; Shift + clique direito
  * devolve Time para voc\u00ea. A capacidade padr\u00e3o \u00e9 5000 (configur\u00e1vel).
+ * Ao morrer, o Time guardado \u00e9 o que permite renascer (ver RebirthHandler): ele \u00e9 gasto por inteiro.
  */
 public class SwallowtailItem extends Item {
     // ===== Ajustes f\u00e1ceis (o .toml tem prioridade) =====
@@ -46,25 +47,23 @@ public class SwallowtailItem extends Item {
     }
 
     /**
-     * Tira at\u00e9 {@code cost} de Time dos Swallowtails que o jogador carrega (usado ao renascer).
-     * Devolve quanto foi realmente tirado.
+     * Esvazia todas as Swallowtails que o jogador carrega (invent\u00e1rio, m\u00e3o secund\u00e1ria e armadura).
+     * Usado ao morrer/renascer. Devolve quanto Time havia guardado no total.
      */
-    public static int consumeReserve(PlayerEntity player, int cost) {
-        int left = cost;
+    public static int drainAll(PlayerEntity player) {
+        int total = 0;
         List<ItemStack> all = new java.util.ArrayList<>();
         all.addAll(player.inventory.items);
         all.addAll(player.inventory.offhand);
         all.addAll(player.inventory.armor);
         for (ItemStack s : all) {
-            if (left <= 0) break;
             if (!(s.getItem() instanceof SwallowtailItem)) continue;
-            int take = Math.min(left, getStored(s));
-            if (take > 0) {
-                setStored(s, getStored(s) - take);
-                left -= take;
-            }
+            int stored = getStored(s);
+            if (stored <= 0) continue;
+            total += stored;
+            setStored(s, 0);
         }
-        return cost - left;
+        return total;
     }
 
     @Override
@@ -73,17 +72,21 @@ public class SwallowtailItem extends Item {
         if (world.isClientSide) return ActionResult.success(stack);
 
         if (!BlockCloverBridge.isTimeUser(player)) {
-            player.displayClientMessage(new StringTextComponent("\u00a77O Swallowtail s\u00f3 responde a quem usa magia de Tempo."), true);
+            Msg.bar(player, TextFormatting.GRAY, "swallow_not_time_user");
             return ActionResult.fail(stack);
         }
         int stored = getStored(stack);
         int time = Math.max(0, BlockCloverBridge.getTime(player));
         boolean withdraw = player.isShiftKeyDown();
+        if (withdraw && RebirthHandler.isReborn(player)) {
+            // renascido: o Time s\u00f3 volta roubando, ent\u00e3o n\u00e3o d\u00e1 para sacar da Swallowtail
+            Msg.bar(player, TextFormatting.RED, "swallow_reborn_locked");
+            return ActionResult.fail(stack);
+        }
         int amount = withdraw ? Math.min(TRANSFER_PER_USE, stored)
                               : Math.min(TRANSFER_PER_USE, Math.min(time, CAPACITY - stored));
         if (amount <= 0) {
-            player.displayClientMessage(new StringTextComponent(withdraw ? "\u00a77O Swallowtail est\u00e1 vazio."
-                    : (stored >= CAPACITY ? "\u00a77O Swallowtail est\u00e1 cheio." : "\u00a77Voc\u00ea n\u00e3o tem Time para guardar.")), true);
+            Msg.bar(player, TextFormatting.GRAY, withdraw ? "swallow_empty" : (stored >= CAPACITY ? "swallow_full" : "swallow_no_time"));
             return ActionResult.fail(stack);
         }
 
@@ -97,8 +100,8 @@ public class SwallowtailItem extends Item {
         BlockCloverBridge.syncToClient(player);
         player.getCooldowns().addCooldown(this, 4);
 
-        player.displayClientMessage(new StringTextComponent("\u00a7bSwallowtail \u00a77" + getStored(stack) + " / " + CAPACITY
-                + (withdraw ? "  \u00a7a+" : "  \u00a7c-") + amount + " Time"), true);
+        Msg.bar(player, withdraw ? TextFormatting.GREEN : TextFormatting.AQUA,
+                withdraw ? "swallow_withdraw" : "swallow_deposit", getStored(stack), CAPACITY, amount);
         world.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENCHANTMENT_TABLE_USE,
                 SoundCategory.PLAYERS, 0.7F, withdraw ? 1.5F : 0.8F);
@@ -110,9 +113,10 @@ public class SwallowtailItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, @Nullable World world, List<ITextComponent> tooltip, ITooltipFlag flag) {
-        tooltip.add(new StringTextComponent("\u00a7bTempo armazenado: \u00a7f" + getStored(stack) + " / " + CAPACITY));
-        tooltip.add(new StringTextComponent("\u00a77Clique direito: guardar " + TRANSFER_PER_USE + " de Time"));
-        tooltip.add(new StringTextComponent("\u00a77Shift + clique direito: devolver " + TRANSFER_PER_USE + " de Time"));
+        tooltip.add(Msg.tr(TextFormatting.AQUA, "swallow_tip_stored", getStored(stack), CAPACITY));
+        tooltip.add(Msg.tr(TextFormatting.GRAY, "swallow_tip_deposit", TRANSFER_PER_USE));
+        tooltip.add(Msg.tr(TextFormatting.GRAY, "swallow_tip_withdraw", TRANSFER_PER_USE));
+        tooltip.add(Msg.tr(TextFormatting.DARK_AQUA, "swallow_tip_rebirth"));
     }
 
     @Override

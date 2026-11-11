@@ -71,6 +71,16 @@ public class ClientStasis {
         return s * s * (3.0F - 2.0F * s);          // suaviza (smoothstep)
     }
 
+    /**
+     * Trocou de dimens\u00e3o ou renasceu: os ids de entidade do mundo novo n\u00e3o t\u00eam rela\u00e7\u00e3o com os antigos, ent\u00e3o
+     * o que estava guardado por id viraria esfera fantasma em outra entidade. O servidor reenvia o que vale.
+     */
+    @SubscribeEvent
+    public static void onRespawn(ClientPlayerNetworkEvent.RespawnEvent event) {
+        TIMES.clear();
+        UNSTABLE.clear();
+    }
+
     @SubscribeEvent
     public static void onLogout(ClientPlayerNetworkEvent.LoggedOutEvent event) {
         TIMES.clear();
