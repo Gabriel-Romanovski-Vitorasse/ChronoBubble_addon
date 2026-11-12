@@ -1,10 +1,31 @@
 {
   "stasis_start": {
-    "sounds": [ { "name": "chrono_bubble:stasis_start", "stream": false } ],
+    "sounds": [
+      {
+        "name": "chrono_bubble:stasis_start",
+        "stream": false
+      }
+    ],
     "subtitle": "chrono_bubble.subtitle.stasis_start"
   },
   "stasis_end": {
-    "sounds": [ { "name": "chrono_bubble:stasis_end", "stream": false } ],
+    "sounds": [
+      {
+        "name": "chrono_bubble:stasis_end",
+        "stream": false
+      }
+    ],
     "subtitle": "chrono_bubble.subtitle.stasis_end"
+  },
+  "time_dissolve": {
+    "sounds": [
+      {
+        "name": "chrono_bubble:stasis_end",
+        "stream": false,
+        "pitch": 1.8,
+        "volume": 0.7
+      }
+    ],
+    "subtitle": "chrono_bubble.subtitle.time_dissolve"
   }
 }

@@ -3,6 +3,12 @@
 ## 1.1.0 (não lançado)
 
 ### Adicionado
+- **A zona acelera o tempo dos projéteis parados**, como no anime: depois de 2 s parado, o projétil se desfaz em
+  partículas, sem dano e sem item. Enquanto isso, a faixa do orbe em volta dele gira cada vez mais rápido e, no fim,
+  a bolha encolhe e pisca. Tridentes nunca se desfazem (são itens de jogador); flechas comuns, conforme a config.
+  Opções `zone.dissolve_seconds` (0 = comportamento antigo), `zone.dissolve_mana` e `zone.dissolve_arrows`.
+- Som próprio para o projétil desfeito (`time_dissolve`), por enquanto o mesmo arquivo do fim do Chrono Stasis, mais
+  agudo, para poder ser trocado depois sem mexer no código.
 - **Magias de tempo no Wither**, com regras de chefe. O Wither ignora efeitos de poção, então o Chrono Stasis do Block
   Clover nunca pegava nele. Agora a esfera arremessada (normal ou sustentada) e o Grigora o congelam com um
   congelamento próprio: só 30% do tempo normal (máximo 3 s), metade disso na segunda fase, e 15 s de "resistência ao

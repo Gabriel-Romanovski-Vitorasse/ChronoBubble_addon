@@ -328,5 +328,12 @@
   "config.chrono_bubble.wither.steal_time_multiplier.tooltip": "Each health point drained from the Wither yields this many times more Time",
   "msg.chrono_bubble.wither_frozen": "Wither frozen for %ss: it resists time.",
   "msg.chrono_bubble.wither_resists": "The Wither still resists time for %ss.",
-  "msg.chrono_bubble.wither_invulnerable": "The Wither is still spawning: invulnerable."
+  "msg.chrono_bubble.wither_invulnerable": "The Wither is still spawning: invulnerable.",
+  "config.chrono_bubble.zone.dissolve_seconds": "Dissolve projectiles after (s, 0 = never)",
+  "config.chrono_bubble.zone.dissolve_seconds.tooltip": "Like in the anime: a projectile stopped by the zone has its time accelerated and dissolves after this many seconds. 0 = stays stopped until the zone turns off, then flies again",
+  "config.chrono_bubble.zone.dissolve_mana": "Mana per dissolved projectile",
+  "config.chrono_bubble.zone.dissolve_mana.tooltip": "Mana spent by the zone owner per dissolved projectile (without mana, the projectile just stays stopped)",
+  "config.chrono_bubble.zone.dissolve_arrows": "Regular arrows dissolve too",
+  "config.chrono_bubble.zone.dissolve_arrows.tooltip": "true = arrows dissolve too (they cannot be picked up). Tridents never dissolve: they are player items",
+  "chrono_bubble.subtitle.time_dissolve": "Projectile dissolves in time"
 }
