@@ -39,10 +39,16 @@ public class ChronoThrowHandler {
         MinecraftForge.EVENT_BUS.addListener(ChronoThrowHandler::onPlayerTick);
         MinecraftForge.EVENT_BUS.addListener(ChronoThrowHandler::onLogout);
         try {
-            Class<?> pre = Class.forName(BlockCloverBridge.CLS_ABILITY_USE_EVENT, false, ChronoThrowHandler.class.getClassLoader());
+            ClassLoader cl = ChronoThrowHandler.class.getClassLoader();
+            Class<?> pre;
+            try {
+                pre = Class.forName(BlockCloverBridge.CLS_ABILITY_USE_PRE, false, cl);     // s\u00f3 o "antes" (ver o Bridge)
+            } catch (ClassNotFoundException e) {
+                pre = Class.forName(BlockCloverBridge.CLS_ABILITY_USE_EVENT, false, cl);   // vers\u00f5es sem Pre/Post
+            }
             Consumer<Event> handler = ChronoThrowHandler::onAbilityUse;
             MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGH, false, (Class) pre, (Consumer) handler);
-            LOGGER.info("[ChronoBubble] Escuta de AbilityUseEvent registrada.");
+            LOGGER.info("[ChronoBubble] Escuta de " + pre.getSimpleName() + " registrada.");
         } catch (Throwable t) {
             LOGGER.warn("[ChronoBubble] Nao consegui registrar o arremesso: " + t);
             // Block Clover ausente ou diferente: o arremesso simplesmente n\u00e3o existe

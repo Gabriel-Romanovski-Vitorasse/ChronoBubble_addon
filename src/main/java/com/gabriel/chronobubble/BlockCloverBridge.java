@@ -37,6 +37,11 @@ public class BlockCloverBridge {
     public static final String CLS_STEAL = PKG + "spells.time.TimeStealAbility";
     public static final String CLS_HOP = PKG + "spells.time.TimeHopAbility";
     public static final String CLS_ABILITY_USE_EVENT = PKG + "api.ability.AbilityUseEvent";
+    /**
+     * Disparado ANTES de a habilidade agir (e cancel\u00e1vel). O Block Clover tamb\u00e9m dispara um {@code $Post} depois;
+     * quem escuta a classe base recebe os dois, e no Time Hop o Post j\u00e1 chega com o jogador teleportado.
+     */
+    public static final String CLS_ABILITY_USE_PRE = CLS_ABILITY_USE_EVENT + "$Pre";
 
     private static Effect stasisEffect;
 
