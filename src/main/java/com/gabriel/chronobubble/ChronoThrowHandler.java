@@ -114,6 +114,16 @@ public class ChronoThrowHandler {
         boolean stasis = ABILITY_CLASS.equals(name);
         boolean steal = STEAL_CLASS.equals(name);
         boolean grigora = GRIGORA_CLASS.equals(name);
+        if (BlockCloverBridge.CLS_HEAL.equals(name)) {   // Shift + Time Healing = Restaura\u00e7\u00e3o do tempo
+            if (!ChronoConfig.REST_ENABLED.get() || !player.isShiftKeyDown()) return;
+            try {
+                event.setCanceled(true);
+            } catch (Throwable t) {
+                return;                                 // n\u00e3o deu para cancelar: fica a cura normal
+            }
+            TimeRestoration.start((ServerPlayerEntity) player);
+            return;
+        }
         if (HOP_CLASS.equals(name)) {
             if (ChronoConfig.REHOP_ENABLED.get()) {     // Time Hop reformulado: troca o teletransporte pelo deslize
                 try {
