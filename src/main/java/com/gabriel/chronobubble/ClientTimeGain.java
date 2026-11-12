@@ -40,17 +40,9 @@ public class ClientTimeGain {
     public static void add(int amount) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || amount <= 0) return;
+        if (!ChronoConfig.HUD_TIME_GAIN.get() || amount < ChronoConfig.HUD_MIN_GAIN.get()) return;   // op\u00e7\u00f5es deste computador
         counter++;
-        POPS.add(new Pop("+" + roman(amount), mc.level.getGameTime(), (counter % 3) * 9));
-    }
-
-    static String roman(int n) {
-        if (n <= 0) return "";
-        int[] v = { 1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1 };
-        String[] s = { "M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I" };
-        StringBuilder b = new StringBuilder();
-        for (int i = 0; i < v.length; i++) while (n >= v[i]) { b.append(s[i]); n -= v[i]; }
-        return b.toString();
+        POPS.add(new Pop("+" + Roman.of(amount), mc.level.getGameTime(), (counter % 3) * 9));
     }
 
     @SubscribeEvent

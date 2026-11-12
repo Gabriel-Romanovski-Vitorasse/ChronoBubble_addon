@@ -17,12 +17,11 @@ import java.util.UUID;
  */
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TimeGainWatcher {
-    // ===== Ajustes f\u00e1ceis =====
-    public static boolean ENABLED = true;
-    /** Ganho m\u00ednimo, em um tick, para contar como "tempo roubado". */
-    public static int MIN_GAIN = 5;
-    /** Limite m\u00e1ximo de Time; 0 = sem limite (padr\u00e3o). */
-    public static int MAX_TIME = 0;   // 0 = sem limite
+    /**
+     * Ganho m\u00ednimo para avisar o cliente. A regenera\u00e7\u00e3o passiva (+1/s) n\u00e3o passa daqui; o que mostrar de fato
+     * (ligado/desligado e o m\u00ednimo) \u00e9 op\u00e7\u00e3o visual de cada cliente.
+     */
+    private static final int SEND_MIN_GAIN = 2;
 
     private static final Map<UUID, Integer> LAST = new HashMap<>();
 
@@ -40,15 +39,16 @@ public class TimeGainWatcher {
 
         int now = BlockCloverBridge.getTime(player);
         if (now < 0) return;
-        if (MAX_TIME > 0 && now > MAX_TIME) {                          // acima do limite: volta para o m\u00e1ximo
-            BlockCloverBridge.setTime(player, MAX_TIME);
+        int max = ChronoConfig.MAX_TIME.get();
+        if (max > 0 && now > max) {                                  // acima do limite: volta para o m\u00e1ximo
+            BlockCloverBridge.setTime(player, max);
             BlockCloverBridge.syncToClient(player);
-            now = MAX_TIME;
+            now = max;
         }
         Integer before = LAST.put(player.getUUID(), now);
         if (before == null) return;
         int gain = now - before;
-        if (ENABLED && gain >= MIN_GAIN) {
+        if (gain >= SEND_MIN_GAIN) {
             ChronoBubbleMod.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new TimeGainPacket(gain));
         }
     }

@@ -35,7 +35,6 @@ public class StasisBubbleRenderer {
     private static final int   RING_SEGMENTS  = 48;
     private static final int   FULL_BRIGHT    = 15728880;
 
-    private static final ResourceLocation EFFECT_ID = new ResourceLocation("block_clover", "chrono_stasis");
     static final ResourceLocation SPHERE_TEX = new ResourceLocation(ChronoBubbleMod.MODID, "textures/effect/sphere.png");
     static final ResourceLocation RING_TEX   = new ResourceLocation(ChronoBubbleMod.MODID, "textures/effect/ring.png");
 
@@ -43,7 +42,7 @@ public class StasisBubbleRenderer {
 
     private static Effect getEffect() {
         if (stasisEffect == null) {
-            stasisEffect = ForgeRegistries.POTIONS.getValue(EFFECT_ID); // null se o mod Block Clover n\u00e3o estiver carregado
+            stasisEffect = BlockCloverBridge.stasisEffect(); // null se o mod Block Clover n\u00e3o estiver carregado
         }
         return stasisEffect;
     }

@@ -1,0 +1,14 @@
+{
+  "parent": "chrono_bubble:root",
+  "display": {
+    "icon": { "item": "minecraft:clock" },
+    "title": { "translate": "advancements.chrono_bubble.rebirth.title" },
+    "description": { "translate": "advancements.chrono_bubble.rebirth.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "reborn": { "trigger": "minecraft:impossible" }
+  }
+}

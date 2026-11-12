@@ -26,11 +26,6 @@ import java.util.List;
  * Ao morrer, o Time guardado \u00e9 o que permite renascer (ver RebirthHandler): ele \u00e9 gasto por inteiro.
  */
 public class SwallowtailItem extends Item {
-    // ===== Ajustes f\u00e1ceis (o .toml tem prioridade) =====
-    public static int CAPACITY = 5000;
-    /** Quanto de Time passa por clique. */
-    public static int TRANSFER_PER_USE = 100;
-
     private static final String KEY = "StoredTime";
 
     public SwallowtailItem() {
@@ -43,7 +38,7 @@ public class SwallowtailItem extends Item {
     }
 
     static void setStored(ItemStack stack, int value) {
-        stack.getOrCreateTag().putInt(KEY, Math.max(0, Math.min(CAPACITY, value)));
+        stack.getOrCreateTag().putInt(KEY, Math.max(0, Math.min(ChronoConfig.SWALLOW_CAPACITY.get(), value)));
     }
 
     /**
@@ -52,11 +47,7 @@ public class SwallowtailItem extends Item {
      */
     public static int drainAll(PlayerEntity player) {
         int total = 0;
-        List<ItemStack> all = new java.util.ArrayList<>();
-        all.addAll(player.inventory.items);
-        all.addAll(player.inventory.offhand);
-        all.addAll(player.inventory.armor);
-        for (ItemStack s : all) {
+        for (ItemStack s : carried(player)) {
             if (!(s.getItem() instanceof SwallowtailItem)) continue;
             int stored = getStored(s);
             if (stored <= 0) continue;
@@ -64,6 +55,22 @@ public class SwallowtailItem extends Item {
             setStored(s, 0);
         }
         return total;
+    }
+
+    /** Soma do Time guardado em todas as Swallowtails que o jogador carrega. */
+    public static int totalStored(PlayerEntity player) {
+        int total = 0;
+        for (ItemStack s : carried(player)) if (s.getItem() instanceof SwallowtailItem) total += getStored(s);
+        return total;
+    }
+
+    /** Invent\u00e1rio, m\u00e3o secund\u00e1ria e armadura. */
+    private static List<ItemStack> carried(PlayerEntity player) {
+        List<ItemStack> all = new java.util.ArrayList<>();
+        all.addAll(player.inventory.items);
+        all.addAll(player.inventory.offhand);
+        all.addAll(player.inventory.armor);
+        return all;
     }
 
     @Override
@@ -83,10 +90,10 @@ public class SwallowtailItem extends Item {
             Msg.bar(player, TextFormatting.RED, "swallow_reborn_locked");
             return ActionResult.fail(stack);
         }
-        int amount = withdraw ? Math.min(TRANSFER_PER_USE, stored)
-                              : Math.min(TRANSFER_PER_USE, Math.min(time, CAPACITY - stored));
+        int amount = withdraw ? Math.min(ChronoConfig.SWALLOW_TRANSFER.get(), stored)
+                              : Math.min(ChronoConfig.SWALLOW_TRANSFER.get(), Math.min(time, ChronoConfig.SWALLOW_CAPACITY.get() - stored));
         if (amount <= 0) {
-            Msg.bar(player, TextFormatting.GRAY, withdraw ? "swallow_empty" : (stored >= CAPACITY ? "swallow_full" : "swallow_no_time"));
+            Msg.bar(player, TextFormatting.GRAY, withdraw ? "swallow_empty" : (stored >= ChronoConfig.SWALLOW_CAPACITY.get() ? "swallow_full" : "swallow_no_time"));
             return ActionResult.fail(stack);
         }
 
@@ -98,10 +105,11 @@ public class SwallowtailItem extends Item {
             BlockCloverBridge.setTime(player, time - amount);
         }
         BlockCloverBridge.syncToClient(player);
+        if (getStored(stack) >= ChronoConfig.SWALLOW_CAPACITY.get()) ChronoAdvancements.grant(player, ChronoAdvancements.FULL_SWALLOWTAIL);
         player.getCooldowns().addCooldown(this, 4);
 
         Msg.bar(player, withdraw ? TextFormatting.GREEN : TextFormatting.AQUA,
-                withdraw ? "swallow_withdraw" : "swallow_deposit", getStored(stack), CAPACITY, amount);
+                withdraw ? "swallow_withdraw" : "swallow_deposit", getStored(stack), ChronoConfig.SWALLOW_CAPACITY.get(), amount);
         world.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENCHANTMENT_TABLE_USE,
                 SoundCategory.PLAYERS, 0.7F, withdraw ? 1.5F : 0.8F);
@@ -113,9 +121,9 @@ public class SwallowtailItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, @Nullable World world, List<ITextComponent> tooltip, ITooltipFlag flag) {
-        tooltip.add(Msg.tr(TextFormatting.AQUA, "swallow_tip_stored", getStored(stack), CAPACITY));
-        tooltip.add(Msg.tr(TextFormatting.GRAY, "swallow_tip_deposit", TRANSFER_PER_USE));
-        tooltip.add(Msg.tr(TextFormatting.GRAY, "swallow_tip_withdraw", TRANSFER_PER_USE));
+        tooltip.add(Msg.tr(TextFormatting.AQUA, "swallow_tip_stored", getStored(stack), ChronoConfig.SWALLOW_CAPACITY.get()));
+        tooltip.add(Msg.tr(TextFormatting.GRAY, "swallow_tip_deposit", ChronoConfig.SWALLOW_TRANSFER.get()));
+        tooltip.add(Msg.tr(TextFormatting.GRAY, "swallow_tip_withdraw", ChronoConfig.SWALLOW_TRANSFER.get()));
         tooltip.add(Msg.tr(TextFormatting.DARK_AQUA, "swallow_tip_rebirth"));
     }
 
@@ -131,7 +139,7 @@ public class SwallowtailItem extends Item {
 
     @Override
     public double getDurabilityForDisplay(ItemStack stack) {
-        return 1.0D - (double) getStored(stack) / Math.max(1, CAPACITY);
+        return 1.0D - (double) getStored(stack) / Math.max(1, ChronoConfig.SWALLOW_CAPACITY.get());
     }
 
     @Override

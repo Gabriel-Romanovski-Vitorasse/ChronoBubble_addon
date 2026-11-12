@@ -1,0 +1,17 @@
+{
+  "display": {
+    "icon": { "item": "chrono_bubble:swallowtail" },
+    "title": { "translate": "advancements.chrono_bubble.root.title" },
+    "description": { "translate": "advancements.chrono_bubble.root.description" },
+    "background": "minecraft:textures/block/mossy_cobblestone.png",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "has_swallowtail": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [ { "item": "chrono_bubble:swallowtail" } ] }
+    }
+  }
+}

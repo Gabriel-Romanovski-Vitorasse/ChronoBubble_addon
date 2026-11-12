@@ -21,10 +21,9 @@ import java.util.Map;
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ParticleFilter {
     // ===== Ajustes f\u00e1ceis =====
-    public static boolean HIDE_STASIS_PARTICLES = true;
     private static final int STASIS_PARTICLE_LIFE = 400;
 
-    private static final ResourceLocation TIME_PARTICLE = new ResourceLocation("block_clover", "time");
+    private static final ResourceLocation TIME_PARTICLE = BlockCloverBridge.TIME_PARTICLE_ID;
 
     private static boolean installed;
     private static boolean lifeFailed;
@@ -32,7 +31,7 @@ public class ParticleFilter {
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (installed || !HIDE_STASIS_PARTICLES || event.phase != TickEvent.Phase.END) return;
+        if (installed || !ChronoConfig.HIDE_PARTICLES.get() || event.phase != TickEvent.Phase.END) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;          // espera o mundo carregar (o Block Clover j\u00e1 registrou as part\u00edculas)
         installed = true;

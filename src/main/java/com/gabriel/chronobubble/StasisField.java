@@ -28,15 +28,10 @@ import java.util.Map;
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class StasisField {
     // ===== Ajustes f\u00e1ceis =====
-    /** Multiplicador do raio da esfera (usado tamb\u00e9m pelo desenho da esfera). */
-    public static float SPHERE_SCALE = 0.95F;
     /** Liga/desliga a parada de proj\u00e9teis. */
     public static final boolean FREEZE_PROJECTILES = true;
 
-    /** At\u00e9 que dist\u00e2ncia (al\u00e9m do raio) procurar proj\u00e9teis r\u00e1pidos que v\u00e3o atingir a esfera no pr\u00f3ximo tick. */
-    public static double CAPTURE_REACH = 6.0D;
 
-    private static final ResourceLocation EFFECT_ID = new ResourceLocation("block_clover", "chrono_stasis");
     private static final String TAG_HELD = "chrono_bubble_held";
 
     /** Entidades congeladas (servidor), por id. */
@@ -45,14 +40,14 @@ public class StasisField {
     private static final Map<Integer, ProjectileEntity> HELD = new HashMap<>();
 
     public static float radius(Entity e) {
-        return Math.max(e.getBbHeight() * 0.62F, e.getBbWidth() * 0.9F) * SPHERE_SCALE;
+        return Math.max(e.getBbHeight() * 0.62F, e.getBbWidth() * 0.9F) * ChronoConfig.f(ChronoConfig.SPHERE_SCALE);
     }
 
     /** Dentro de alguma zona ligada (ChronoZone)? Proj\u00e9teis do pr\u00f3prio dono da zona n\u00e3o contam. */
     private static boolean insideAnyZone(ProjectileEntity p, World world) {
-        double r = ChronoZone.RADIUS + 0.1D;
+        double r = ChronoConfig.f(ChronoConfig.ZONE_RADIUS) + 0.1D;
         for (PlayerEntity o : ChronoZone.owners(world)) {
-            if (ChronoZone.OWN_PROJECTILES_PASS && p.getOwner() == o) continue;
+            if (ChronoConfig.ZONE_OWN_PASS.get() && p.getOwner() == o) continue;
             if (p.distanceToSqr(o.getX(), o.getY() + o.getBbHeight() * 0.5D, o.getZ()) <= r * r) return true;
         }
         return false;
@@ -63,7 +58,7 @@ public class StasisField {
      * esfera, devolve a fra\u00e7\u00e3o [0,1] do trajeto em que ele toca a superf\u00edcie (0 = j\u00e1 est\u00e1 dentro).
      * Devolve -1 se n\u00e3o cruza.
      */
-    private static double crossing(Vector3d pos, Vector3d motion, double cx, double cy, double cz, double r) {
+    static double crossing(Vector3d pos, Vector3d motion, double cx, double cy, double cz, double r) {
         double ox = pos.x - cx, oy = pos.y - cy, oz = pos.z - cz;
         double c = ox * ox + oy * oy + oz * oz - r * r;
         if (c <= 0.0D) return 0.0D;                                   // j\u00e1 dentro
@@ -94,7 +89,7 @@ public class StasisField {
 
     /** Avisa os clientes que veem o proj\u00e9til para desenhar (ou remover) o orbe do Chrono Stasis nele. */
     private static void sendOrb(ProjectileEntity p, boolean on) {
-        if (!ChronoZone.PROJECTILE_ORBS || p.level.isClientSide) return;
+        if (!ChronoConfig.ZONE_ORBS.get() || p.level.isClientSide) return;
         ChronoBubbleMod.CHANNEL.send(net.minecraftforge.fml.network.PacketDistributor.TRACKING_ENTITY.with(() -> p),
                 new ProjectileOrbPacket(p.getId(), on));
     }
@@ -120,7 +115,7 @@ public class StasisField {
         World world = event.world;
 
         // 1) esquece quem n\u00e3o est\u00e1 mais congelado
-        Effect effect = ForgeRegistries.POTIONS.getValue(EFFECT_ID);
+        Effect effect = BlockCloverBridge.stasisEffect();
         FROZEN.values().removeIf(e -> !e.isAlive() || effect == null || !e.hasEffect(effect));
 
         if (!FREEZE_PROJECTILES) return;
@@ -128,13 +123,13 @@ public class StasisField {
         // 2) zonas ligadas: proj\u00e9til que entra neste tick ou no pr\u00f3ximo (previs\u00e3o do trajeto) \u00e9 parado;
         //    quem vem r\u00e1pido fica na superf\u00edcie da zona, antes de passar.
         for (PlayerEntity o : ChronoZone.owners(world)) {
-            double r = ChronoZone.RADIUS;
+            double r = ChronoConfig.f(ChronoConfig.ZONE_RADIUS);
             double cx = o.getX(), cy = o.getY() + o.getBbHeight() * 0.5D, cz = o.getZ();
-            double reach = r + CAPTURE_REACH;
+            double reach = r + ChronoConfig.ZONE_CAPTURE_REACH.get();
             AxisAlignedBB box = new AxisAlignedBB(cx - reach, cy - reach, cz - reach, cx + reach, cy + reach, cz + reach);
             for (ProjectileEntity p : world.getEntitiesOfClass(ProjectileEntity.class, box)) {
                 if (HELD.containsKey(p.getId()) || p instanceof StasisOrbEntity) continue;
-                if (ChronoZone.OWN_PROJECTILES_PASS && p.getOwner() == o) continue;
+                if (ChronoConfig.ZONE_OWN_PASS.get() && p.getOwner() == o) continue;
                 Vector3d m = p.getDeltaMovement();
                 if (m.lengthSqr() < 1.0E-4D) continue;                 // cravada / parada
                 double t = crossing(p.position(), m, cx, cy, cz, r);

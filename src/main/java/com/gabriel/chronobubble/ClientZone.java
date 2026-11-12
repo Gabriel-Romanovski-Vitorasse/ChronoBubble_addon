@@ -112,7 +112,7 @@ public class ClientZone {
             if (e == null) continue;
             float age = mc.level.getGameTime() + pt - en.getValue();
             float s = Math.max(0.0F, Math.min(1.0F, age / POP_TICKS));
-            float radius = ChronoZone.RADIUS * s * s * (3.0F - 2.0F * s);
+            float radius = ChronoConfig.f(ChronoConfig.ZONE_RADIUS) * s * s * (3.0F - 2.0F * s);
             if (radius < 0.05F) continue;
 
             double x = MathHelper.lerp(pt, e.xo, e.getX()) - cam.x;

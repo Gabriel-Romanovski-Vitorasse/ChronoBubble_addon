@@ -23,12 +23,11 @@ import net.minecraftforge.registries.ForgeRegistries;
  */
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class StasisSync {
-    private static final ResourceLocation EFFECT_ID = new ResourceLocation("block_clover", "chrono_stasis");
     /** Marca no NBT do mob: "fui eu (este addon) que desliguei a IA dele". S\u00f3 ent\u00e3o a IA \u00e9 religada. */
     private static final String TAG = "chrono_bubble_froze_ai";
 
     private static boolean isStasis(Effect effect) {
-        return effect != null && EFFECT_ID.equals(effect.getRegistryName());
+        return effect != null && BlockCloverBridge.STASIS_EFFECT_ID.equals(effect.getRegistryName());
     }
 
     private static void send(LivingEntity entity, int duration) {
@@ -102,7 +101,7 @@ public class StasisSync {
     @SubscribeEvent
     public static void onStartTracking(PlayerEvent.StartTracking event) {
         if (!(event.getTarget() instanceof LivingEntity) || !(event.getPlayer() instanceof ServerPlayerEntity)) return;
-        Effect effect = ForgeRegistries.POTIONS.getValue(EFFECT_ID);
+        Effect effect = BlockCloverBridge.stasisEffect();
         if (effect == null) return;
         LivingEntity target = (LivingEntity) event.getTarget();
         EffectInstance inst = target.getEffect(effect);
@@ -117,7 +116,7 @@ public class StasisSync {
     public static void onJoin(EntityJoinWorldEvent event) {
         if (event.getWorld().isClientSide || !(event.getEntity() instanceof LivingEntity)) return;
         LivingEntity living = (LivingEntity) event.getEntity();
-        Effect effect = ForgeRegistries.POTIONS.getValue(EFFECT_ID);
+        Effect effect = BlockCloverBridge.stasisEffect();
         boolean frozen = effect != null && living.hasEffect(effect);
         if (frozen) StasisField.FROZEN.put(living.getId(), living);
         if (living instanceof MobEntity && !frozen && living.getPersistentData().getBoolean(TAG)) {

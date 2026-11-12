@@ -16,8 +16,6 @@ import java.util.UUID;
  */
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TimeStealFix {
-    /** Time ganho por soco do Time Steal. 0 = deixa o comportamento original do mod. */
-    public static int FIXED_GAIN = 20;
 
     private static final class Before {
         final int time;
@@ -30,7 +28,7 @@ public class TimeStealFix {
     /** Antes do mod original tratar o golpe: guarda o estado se o soco do Time Steal est\u00e1 armado. */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void before(LivingHurtEvent event) {
-        if (FIXED_GAIN <= 0 || event.getEntityLiving().level.isClientSide) return;
+        if (ChronoConfig.STEAL_PUNCH_GAIN.get() <= 0 || event.getEntityLiving().level.isClientSide) return;
         if (!(event.getSource().getEntity() instanceof ServerPlayerEntity)) return;
         ServerPlayerEntity player = (ServerPlayerEntity) event.getSource().getEntity();
         if (!BlockCloverBridge.isStealPunchActive(player)) return;
@@ -40,13 +38,14 @@ public class TimeStealFix {
     /** Depois: se o soco realmente acertou (gastou mana), o Time passa a ser o de antes + o ganho fixo. */
     @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
     public static void after(LivingHurtEvent event) {
-        if (FIXED_GAIN <= 0 || event.getEntityLiving().level.isClientSide) return;
+        if (ChronoConfig.STEAL_PUNCH_GAIN.get() <= 0 || event.getEntityLiving().level.isClientSide) return;
         if (!(event.getSource().getEntity() instanceof ServerPlayerEntity)) return;
         ServerPlayerEntity player = (ServerPlayerEntity) event.getSource().getEntity();
         Before b = PENDING.remove(player.getUUID());
         if (b == null || b.time < 0) return;
         if (!(BlockCloverBridge.getMana(player) < b.mana - 1.0F)) return;   // o soco n\u00e3o foi consumido
-        BlockCloverBridge.setTime(player, b.time + FIXED_GAIN);
+        BlockCloverBridge.setTime(player, b.time + ChronoConfig.STEAL_PUNCH_GAIN.get());
         BlockCloverBridge.syncToClient(player);
+        RebirthHandler.acceptTime(player);
     }
 }

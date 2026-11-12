@@ -78,8 +78,8 @@ public class ClientPrecog {
                 Vector3d pos = new Vector3d(MathHelper.lerp(pt, e.xo, e.getX()), MathHelper.lerp(pt, e.yo, e.getY()), MathHelper.lerp(pt, e.zo, e.getZ()));
                 Vector3d m = e.getDeltaMovement();
                 Vector3d player = new Vector3d(mc.player.getX(), mc.player.getY() + mc.player.getBbHeight() * 0.5D, mc.player.getZ());
-                int impact = Precognition.HORIZON_TICKS;
-                for (int t = 1; t <= Precognition.HORIZON_TICKS; t++) {
+                int impact = ChronoConfig.PRECOG_HORIZON.get();
+                for (int t = 1; t <= ChronoConfig.PRECOG_HORIZON.get(); t++) {
                     if (Precognition.predict(pos, m, e.isNoGravity(), t).distanceToSqr(player) <= 1.44D) { impact = t; break; }
                 }
                 for (int i = 1; i <= DOTS; i++) {
