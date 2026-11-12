@@ -272,5 +272,7 @@
   "config.chrono_bubble.rebirth.time_ressurection_first.tooltip": "true = on a killing blow, the Time Ressurection passive acts first if it is ready (full charge and more than 300 Time; consumes all Time) and the Swallowtail is left untouched. If it is not ready, the Swallowtail rebirth applies.",
   "msg.chrono_bubble.ressurection_saved": "Time Ressurection consumed all your Time and saved you from the killing blow. The Swallowtail was not used.",
   "msg.chrono_bubble.status_magic_zone": "Time Magic Zone active (precognition): %s",
-  "msg.chrono_bubble.status_ressurection": "Time Ressurection ready: %s"
+  "msg.chrono_bubble.status_ressurection": "Time Ressurection ready: %s",
+  "config.chrono_bubble.visual.second_ring": "Second numeral ring",
+  "config.chrono_bubble.visual.second_ring.tooltip": "true = draw a second, thinner ring tilted the other way (the anime uses only one)"
 }

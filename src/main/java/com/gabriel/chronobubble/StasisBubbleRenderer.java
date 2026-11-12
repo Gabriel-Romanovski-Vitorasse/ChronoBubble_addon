@@ -2,6 +2,7 @@ package com.gabriel.chronobubble;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -11,32 +12,60 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Matrix3f;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3f;
+import net.minecraft.util.math.vector.Vector4f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
 
 /**
- * Desenha, em volta de qualquer entidade com o efeito block_clover:chrono_stasis
- * (usado pelo Chrono Stasis e pelo Chrono Stasis Grigora), uma esfera transl\u00facida
- * e dois an\u00e9is inclinados com numerais romanos girando.
+ * Desenha a bolha do Chrono Stasis: uma esfera transl\u00facida com efeito "bolha" (fresnel: borda azul, centro quase
+ * transparente, brilho suave) e uma faixa fina de numerais romanos, pouco inclinada, girando devagar.
+ * <p>
+ * {@link #drawBubble} \u00e9 usado por todos: mobs congelados (aqui), zona e proj\u00e9teis parados ({@link ClientZone}),
+ * bolha fantasma do Time Hop ({@link ClientHopGhost}) e a esfera arremessada ({@link StasisOrbRenderer}).
+ * A cor e a transpar\u00eancia da esfera s\u00e3o calculadas por v\u00e9rtice a partir do \u00e2ngulo de vis\u00e3o, ent\u00e3o ela fica igual
+ * de qualquer lado; a textura da esfera \u00e9 branca e lisa. A textura da faixa \u00e9 gerada por
+ * {@code tools/textures/make_ring.py}.
  */
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class StasisBubbleRenderer {
 
     // ===== Ajustes f\u00e1ceis =====
-    private static final float SPHERE_ALPHA   = 0.55F;  // 0..1 transpar\u00eancia da esfera
-    private static final float RING_ALPHA     = 0.90F;  // 0..1 transpar\u00eancia dos an\u00e9is
-    private static final float RING_SPEED     = 2.0F;   // graus por tick de rota\u00e7\u00e3o do anel
-    private static final float RING_HEIGHT    = 0.22F;  // altura (largura) da faixa, em fra\u00e7\u00e3o do raio
-    private static final int   LAT_SEGMENTS   = 14;
-    private static final int   LON_SEGMENTS   = 24;
-    private static final int   RING_SEGMENTS  = 48;
-    private static final int   FULL_BRIGHT    = 15728880;
+    /** Opacidade m\u00e1xima da esfera (na borda). */
+    private static final float SPHERE_ALPHA = 0.80F;
+    /** Opacidade da esfera no centro (de frente para quem olha), em fra\u00e7\u00e3o da borda. */
+    private static final float CENTER_ALPHA = 0.10F;
+    /** Quanto mais alto, mais fina a borda azul. */
+    private static final float RIM_POWER = 1.8F;
+    private static final float RING_ALPHA = 0.90F;
+    /**
+     * Inclina\u00e7\u00e3o da faixa (graus): na dire\u00e7\u00e3o de quem olha (a faixa aparece como uma elipse aberta, como no
+     * anime, em vez de uma linha vista de lado) e de lado (a faixa fica um pouco torta). Velocidade de giro em graus/tick.
+     */
+    private static final float RING_TILT_TOWARD = 22.0F;
+    private static final float RING_TILT_SIDE = 12.0F;
+    private static final float RING_SPEED = 0.8F;
+    /** Largura da faixa dos mobs congelados, em fra\u00e7\u00e3o do raio. */
+    private static final float MOB_BAND = 0.18F;
+    /** Propor\u00e7\u00e3o largura/altura de uma repeti\u00e7\u00e3o da textura da faixa (ring.png: 1024 x 64). */
+    private static final float RING_TEX_ASPECT = 16.0F;
+    private static final int LAT_SEGMENTS = 18;
+    private static final int LON_SEGMENTS = 32;
+    private static final int RING_SEGMENTS = 64;
+    private static final int FULL_BRIGHT = 15728880;
+
+    /** Cores da esfera: centro (quase branco) e borda (azul). */
+    private static final float[] CENTER_RGB = { 0.84F, 0.93F, 1.00F };
+    private static final float[] EDGE_RGB = { 0.30F, 0.60F, 1.00F };
+    /** Dire\u00e7\u00e3o do brilho, no espa\u00e7o da c\u00e2mera (de cima, da esquerda, um pouco para quem olha). */
+    private static final Vector3f HIGHLIGHT_DIR = normalized(-0.45F, 0.65F, 0.6F);
 
     static final ResourceLocation SPHERE_TEX = new ResourceLocation(ChronoBubbleMod.MODID, "textures/effect/sphere.png");
-    static final ResourceLocation RING_TEX   = new ResourceLocation(ChronoBubbleMod.MODID, "textures/effect/ring.png");
+    static final ResourceLocation RING_TEX = new ResourceLocation(ChronoBubbleMod.MODID, "textures/effect/ring.png");
+    /** Mesmas inst\u00e2ncias para todos (o buffer agrupa por tipo; quem chama endBatch usa estas). */
+    static final RenderType SPHERE_TYPE = RenderType.entityTranslucent(SPHERE_TEX);
+    static final RenderType RING_TYPE = RenderType.entityTranslucent(RING_TEX);
 
     private static Effect stasisEffect;
 
@@ -45,6 +74,12 @@ public class StasisBubbleRenderer {
             stasisEffect = BlockCloverBridge.stasisEffect(); // null se o mod Block Clover n\u00e3o estiver carregado
         }
         return stasisEffect;
+    }
+
+    private static Vector3f normalized(float x, float y, float z) {
+        Vector3f v = new Vector3f(x, y, z);
+        v.normalize();
+        return v;
     }
 
     @SubscribeEvent
@@ -56,7 +91,6 @@ public class StasisBubbleRenderer {
         if (!frozen) return;
 
         MatrixStack stack = event.getMatrixStack();
-        IRenderTypeBuffer buffers = event.getBuffers();
         float time = entity.tickCount + event.getPartialRenderTick();
 
         // Raio compartilhado com a l\u00f3gica dos proj\u00e9teis (StasisField) e anima\u00e7\u00e3o de entrada/sa\u00edda
@@ -65,48 +99,51 @@ public class StasisBubbleRenderer {
 
         stack.pushPose();
         stack.translate(0.0D, entity.getBbHeight() * 0.5D, 0.0D);
+        float pulse = 1.0F + 0.015F * (float) Math.sin(time * 0.15F);       // leve pulsa\u00e7\u00e3o
+        drawBubble(stack, event.getBuffers(), radius * pulse, ClientStasis.flicker(entity, time), time, MOB_BAND);
+        stack.popPose();
+    }
 
-        float flick = ClientStasis.flicker(entity, time);
+    /**
+     * Esfera + faixa de numerais (e o segundo anel, se ligado na config), centrada na origem da pilha.
+     *
+     * @param fade      0..1, multiplica a opacidade de tudo (anima\u00e7\u00f5es, piscar do tempo inst\u00e1vel)
+     * @param time      ticks, para o giro da faixa
+     * @param bandRatio largura da faixa em fra\u00e7\u00e3o do raio (esferas pequenas usam faixa proporcionalmente mais larga)
+     */
+    public static void drawBubble(MatrixStack stack, IRenderTypeBuffer buffers, float radius, float fade, float time, float bandRatio) {
+        drawSphere(stack, buffers.getBuffer(SPHERE_TYPE), radius, SPHERE_ALPHA * fade);
 
-        // Esfera (leve pulsa\u00e7\u00e3o)
-        float pulse = 1.0F + 0.015F * (float) Math.sin(time * 0.15F);
-        drawSphere(stack, buffers.getBuffer(RenderType.entityTranslucent(SPHERE_TEX)),
-                radius * pulse, SPHERE_ALPHA * flick);
-
-        // Anel 1: inclinado, girando num sentido
+        // vira a faixa para quem olha (s\u00f3 em volta do eixo vertical): +Z local passa a apontar para a c\u00e2mera
+        float yaw = Minecraft.getInstance().gameRenderer.getMainCamera().getYRot();
         stack.pushPose();
-        stack.mulPose(Vector3f.ZP.rotationDegrees(28.0F));
+        stack.mulPose(Vector3f.YP.rotationDegrees(180.0F - yaw));
+
+        stack.pushPose();
+        stack.mulPose(Vector3f.XP.rotationDegrees(RING_TILT_TOWARD));       // lado perto de quem olha desce
+        stack.mulPose(Vector3f.ZP.rotationDegrees(RING_TILT_SIDE));
         stack.mulPose(Vector3f.YP.rotationDegrees(time * RING_SPEED));
-        drawRing(stack, buffers.getBuffer(RenderType.entityTranslucent(RING_TEX)), radius * 1.06F, radius * RING_HEIGHT, RING_ALPHA * flick);
+        drawRing(stack, buffers.getBuffer(RING_TYPE), radius * 1.04F, radius * bandRatio, RING_ALPHA * fade);
         stack.popPose();
 
-        // Anel 2: inclinado para o outro lado, girando ao contr\u00e1rio e mais devagar
-        stack.pushPose();
-        stack.mulPose(Vector3f.ZP.rotationDegrees(-62.0F));
-        stack.mulPose(Vector3f.YP.rotationDegrees(-time * RING_SPEED * 0.6F));
-        drawRing(stack, buffers.getBuffer(RenderType.entityTranslucent(RING_TEX)), radius * 1.10F, radius * RING_HEIGHT * 0.8F, RING_ALPHA * 0.85F * flick);
-        stack.popPose();
-
+        if (ChronoConfig.SECOND_RING.get()) {
+            stack.pushPose();
+            stack.mulPose(Vector3f.XP.rotationDegrees(-RING_TILT_TOWARD));
+            stack.mulPose(Vector3f.ZP.rotationDegrees(-55.0F));
+            stack.mulPose(Vector3f.YP.rotationDegrees(-time * RING_SPEED * 0.6F));
+            drawRing(stack, buffers.getBuffer(RING_TYPE), radius * 1.08F, radius * bandRatio * 0.75F, RING_ALPHA * 0.8F * fade);
+            stack.popPose();
+        }
         stack.popPose();
     }
 
-    private static void vertex(IVertexBuilder b, Matrix4f pose, Matrix3f normal,
-                               float x, float y, float z, float u, float v,
-                               float nx, float ny, float nz, int alpha) {
-        b.vertex(pose, x, y, z)
-                .color(255, 255, 255, alpha)
-                .uv(u, v)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(FULL_BRIGHT)
-                .normal(normal, nx, ny, nz)
-                .endVertex();
-    }
-
-    /** Esfera por latitude/longitude, textura mapeada de forma cont\u00ednua. */
+    /**
+     * Esfera com efeito fresnel. Para cada v\u00e9rtice, compara a normal com a dire\u00e7\u00e3o de quem olha: de frente, quase
+     * transparente e clara; de lado (na borda), azul e mais opaca. Um brilho suave fixo na c\u00e2mera completa o ar de bolha.
+     */
     static void drawSphere(MatrixStack stack, IVertexBuilder b, float r, float alphaF) {
         Matrix4f pose = stack.last().pose();
         Matrix3f normal = stack.last().normal();
-        int alpha = (int) (alphaF * 255.0F);
 
         for (int i = 0; i < LAT_SEGMENTS; i++) {
             double lat0 = Math.PI * (-0.5 + (double) i / LAT_SEGMENTS);
@@ -124,33 +161,93 @@ public class StasisBubbleRenderer {
                 float u0 = (float) j / LON_SEGMENTS;
                 float u1 = (float) (j + 1) / LON_SEGMENTS;
 
-                vertex(b, pose, normal, r * x00 * c0, r * y0, r * z00 * c0, u0, v0, x00 * c0, y0, z00 * c0, alpha);
-                vertex(b, pose, normal, r * x01 * c0, r * y0, r * z01 * c0, u1, v0, x01 * c0, y0, z01 * c0, alpha);
-                vertex(b, pose, normal, r * x01 * c1, r * y1, r * z01 * c1, u1, v1, x01 * c1, y1, z01 * c1, alpha);
-                vertex(b, pose, normal, r * x00 * c1, r * y1, r * z00 * c1, u0, v1, x00 * c1, y1, z00 * c1, alpha);
+                bubbleVertex(b, pose, normal, r, x00 * c0, y0, z00 * c0, u0, v0, alphaF);
+                bubbleVertex(b, pose, normal, r, x01 * c0, y0, z01 * c0, u1, v0, alphaF);
+                bubbleVertex(b, pose, normal, r, x01 * c1, y1, z01 * c1, u1, v1, alphaF);
+                bubbleVertex(b, pose, normal, r, x00 * c1, y1, z00 * c1, u0, v1, alphaF);
             }
         }
     }
 
-    /** Faixa cil\u00edndrica (aberta) em volta do eixo Y, com os numerais repetidos ao longo da volta. */
+    /** V\u00e9rtice da esfera de raio {@code r} na dire\u00e7\u00e3o unit\u00e1ria (nx, ny, nz), com cor e opacidade do fresnel. */
+    private static void bubbleVertex(IVertexBuilder b, Matrix4f pose, Matrix3f normalMat, float r,
+                                     float nx, float ny, float nz, float u, float v, float alphaF) {
+        // posi\u00e7\u00e3o e normal no espa\u00e7o da c\u00e2mera (a c\u00e2mera est\u00e1 na origem)
+        Vector4f p = new Vector4f(r * nx, r * ny, r * nz, 1.0F);
+        p.transform(pose);
+        Vector3f n = new Vector3f(nx, ny, nz);
+        n.transform(normalMat);
+        n.normalize();
+        float dist = (float) Math.sqrt(p.x() * p.x() + p.y() * p.y() + p.z() * p.z());
+        float facing = dist < 1.0E-4F ? 1.0F
+                : Math.abs(-(n.x() * p.x() + n.y() * p.y() + n.z() * p.z()) / dist);   // 1 = de frente, 0 = de lado
+        float rim = (float) Math.pow(1.0F - Math.min(1.0F, facing), RIM_POWER);
+        float spec = (float) Math.pow(Math.max(0.0F, n.dot(HIGHLIGHT_DIR)), 24.0F) * 0.7F;
+
+        float red = lerp(CENTER_RGB[0], EDGE_RGB[0], rim) + spec;
+        float green = lerp(CENTER_RGB[1], EDGE_RGB[1], rim) + spec;
+        float blue = lerp(CENTER_RGB[2], EDGE_RGB[2], rim) + spec;
+        float alpha = alphaF * (CENTER_ALPHA + (1.0F - CENTER_ALPHA) * rim) + spec * alphaF;
+
+        b.vertex(pose, r * nx, r * ny, r * nz)
+                .color(byteOf(red), byteOf(green), byteOf(blue), byteOf(alpha))
+                .uv(u, v)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(FULL_BRIGHT)
+                .normal(normalMat, nx, ny, nz)
+                .endVertex();
+    }
+
+    private static float lerp(float a, float b, float t) {
+        return a + (b - a) * t;
+    }
+
+    private static int byteOf(float f) {
+        return Math.max(0, Math.min(255, (int) (f * 255.0F)));
+    }
+
+    /**
+     * Faixa de numerais: um cilindro baixo. A textura se repete em volta quantas vezes for preciso para os numerais
+     * n\u00e3o ficarem esticados, seja qual for o tamanho da esfera.
+     */
     static void drawRing(MatrixStack stack, IVertexBuilder b, float radius, float height, float alphaF) {
         Matrix4f pose = stack.last().pose();
         Matrix3f normal = stack.last().normal();
-        int alpha = (int) (alphaF * 255.0F);
+        int alpha = byteOf(alphaF);
         float half = height * 0.5F;
+        int repeats = ringRepeats(radius, height);
 
         for (int j = 0; j < RING_SEGMENTS; j++) {
             double a0 = 2 * Math.PI * j / RING_SEGMENTS;
             double a1 = 2 * Math.PI * (j + 1) / RING_SEGMENTS;
             float x0 = (float) Math.cos(a0), z0 = (float) Math.sin(a0);
             float x1 = (float) Math.cos(a1), z1 = (float) Math.sin(a1);
-            float u0 = (float) j / RING_SEGMENTS;
-            float u1 = (float) (j + 1) / RING_SEGMENTS;
+            // u decresce com o \u00e2ngulo: assim os numerais da frente (lado de fora) se leem da esquerda para a direita
+            float u0 = repeats * (1.0F - (float) j / RING_SEGMENTS);
+            float u1 = repeats * (1.0F - (float) (j + 1) / RING_SEGMENTS);
 
             vertex(b, pose, normal, radius * x0, -half, radius * z0, u0, 1.0F, x0, 0, z0, alpha);
             vertex(b, pose, normal, radius * x1, -half, radius * z1, u1, 1.0F, x1, 0, z1, alpha);
-            vertex(b, pose, normal, radius * x1,  half, radius * z1, u1, 0.0F, x1, 0, z1, alpha);
-            vertex(b, pose, normal, radius * x0,  half, radius * z0, u0, 0.0F, x0, 0, z0, alpha);
+            vertex(b, pose, normal, radius * x1, half, radius * z1, u1, 0.0F, x1, 0, z1, alpha);
+            vertex(b, pose, normal, radius * x0, half, radius * z0, u0, 0.0F, x0, 0, z0, alpha);
         }
+    }
+
+    /** Quantas vezes a textura da faixa cabe em volta sem esticar (pelo menos 1). */
+    static int ringRepeats(float radius, float height) {
+        if (height <= 0.0F) return 1;
+        return Math.max(1, Math.round((float) (2.0 * Math.PI * radius) / (height * RING_TEX_ASPECT)));
+    }
+
+    private static void vertex(IVertexBuilder b, Matrix4f pose, Matrix3f normal,
+                               float x, float y, float z, float u, float v,
+                               float nx, float ny, float nz, int alpha) {
+        b.vertex(pose, x, y, z)
+                .color(255, 255, 255, alpha)
+                .uv(u, v)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(FULL_BRIGHT)
+                .normal(normal, nx, ny, nz)
+                .endVertex();
     }
 }

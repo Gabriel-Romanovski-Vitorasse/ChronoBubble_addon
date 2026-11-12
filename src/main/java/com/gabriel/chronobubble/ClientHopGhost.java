@@ -3,12 +3,10 @@ package com.gabriel.chronobubble;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
@@ -23,8 +21,8 @@ import java.util.List;
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ClientHopGhost {
     private static final float RADIUS = 1.35F;
-    private static final float SPHERE_ALPHA = 0.42F;
-    private static final float RING_ALPHA = 0.8F;
+    private static final float FADE = 0.8F;
+    private static final float BAND = 0.14F;
     private static final float POP_TICKS = 6.0F;
 
     private static final class Ghost {
@@ -55,8 +53,6 @@ public class ClientHopGhost {
         float pt = event.getPartialTicks();
         Vector3d cam = mc.gameRenderer.getMainCamera().getPosition();
         IRenderTypeBuffer.Impl buffers = mc.renderBuffers().bufferSource();
-        RenderType sphereType = RenderType.entityTranslucent(StasisBubbleRenderer.SPHERE_TEX);
-        RenderType ringType = RenderType.entityTranslucent(StasisBubbleRenderer.RING_TEX);
 
         for (Iterator<Ghost> it = GHOSTS.iterator(); it.hasNext(); ) {
             Ghost g = it.next();
@@ -91,20 +87,10 @@ public class ClientHopGhost {
             if (radius < 0.05F) continue;
             stack.pushPose();
             stack.translate(x, y + 0.9D, z);
-            StasisBubbleRenderer.drawSphere(stack, buffers.getBuffer(sphereType), radius, SPHERE_ALPHA);
-            stack.pushPose();
-            stack.mulPose(Vector3f.ZP.rotationDegrees(28.0F));
-            stack.mulPose(Vector3f.YP.rotationDegrees(age * 3.0F));
-            StasisBubbleRenderer.drawRing(stack, buffers.getBuffer(ringType), radius * 1.06F, radius * 0.22F, RING_ALPHA);
+            StasisBubbleRenderer.drawBubble(stack, buffers, radius, FADE, age, BAND);
             stack.popPose();
-            stack.pushPose();
-            stack.mulPose(Vector3f.ZP.rotationDegrees(-62.0F));
-            stack.mulPose(Vector3f.YP.rotationDegrees(-age * 1.8F));
-            StasisBubbleRenderer.drawRing(stack, buffers.getBuffer(ringType), radius * 1.10F, radius * 0.18F, RING_ALPHA * 0.85F);
-            stack.popPose();
-            stack.popPose();
-            buffers.endBatch(sphereType);
-            buffers.endBatch(ringType);
+            buffers.endBatch(StasisBubbleRenderer.SPHERE_TYPE);
+            buffers.endBatch(StasisBubbleRenderer.RING_TYPE);
         }
     }
 

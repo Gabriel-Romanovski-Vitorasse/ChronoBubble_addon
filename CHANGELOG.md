@@ -3,6 +3,16 @@
 ## 1.1.0 (não lançado)
 
 ### Adicionado
+- **Visual novo do Chrono Stasis**, mais próximo do anime, em todos os lugares onde a bolha aparece (mobs congelados,
+  zona, projéteis parados, bolha fantasma do Time Hop e a esfera arremessada):
+  - esfera com efeito de bolha (fresnel): borda azul, centro quase transparente e um brilho suave, igual de qualquer
+    lado;
+  - uma faixa só, fina, inclinada na direção de quem olha e girando devagar, com textura nova (fundo azul
+    translúcido, bordas brancas, numerais brancos irregulares com letrinhas, sem divisórias), sem numerais esticados
+    nem espelhados na frente;
+  - a esfera arremessada ganhou a mesma faixa em miniatura;
+  - segundo anel opcional: `visual.second_ring` (desligado por padrão).
+- Pasta `tools/` com os geradores da textura da faixa, da config e uma prévia da bolha fora do jogo.
 - "Antever ataques" agora exige a passiva **Time Magic Zone** do Block Clover (a magia que "sente ataques futuros")
   desbloqueada e ativa. Opção `precognition.require_time_magic_zone`.
 - A passiva **Time Ressurection** do Block Clover age antes do renascimento pela Swallowtail: se estiver pronta, salva

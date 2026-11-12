@@ -3,13 +3,11 @@ package com.gabriel.chronobubble;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
@@ -27,8 +25,12 @@ import java.util.Map;
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ClientZone {
     // ===== Ajustes f\u00e1ceis =====
-    private static final float SPHERE_ALPHA = 0.16F;   // a esfera \u00e9 grande: bem transparente
-    private static final float RING_ALPHA = 0.55F;
+    /** A esfera da zona \u00e9 grande: um pouco mais apagada que a dos mobs, com a faixa fina. */
+    private static final float ZONE_FADE = 0.6F;
+    private static final float ZONE_BAND = 0.06F;
+    /** Orbe em volta de cada proj\u00e9til parado (esfera pequena: faixa proporcionalmente mais larga). */
+    private static final float PROJ_FADE = 0.85F;
+    private static final float PROJ_BAND = 0.25F;
     private static final float POP_TICKS = 8.0F;
 
     public static KeyBinding KEY;
@@ -103,8 +105,6 @@ public class ClientZone {
         float pt = event.getPartialTicks();
         Vector3d cam = mc.gameRenderer.getMainCamera().getPosition();
         IRenderTypeBuffer.Impl buffers = mc.renderBuffers().bufferSource();
-        RenderType sphereType = RenderType.entityTranslucent(StasisBubbleRenderer.SPHERE_TEX);
-        RenderType ringType = RenderType.entityTranslucent(StasisBubbleRenderer.RING_TEX);
 
         boolean drew = false;
         for (Map.Entry<Integer, Long> en : ACTIVE.entrySet()) {
@@ -118,24 +118,10 @@ public class ClientZone {
             double x = MathHelper.lerp(pt, e.xo, e.getX()) - cam.x;
             double y = MathHelper.lerp(pt, e.yo, e.getY()) + e.getBbHeight() * 0.5D - cam.y;
             double z = MathHelper.lerp(pt, e.zo, e.getZ()) - cam.z;
-            float time = age;
 
             stack.pushPose();
             stack.translate(x, y, z);
-            StasisBubbleRenderer.drawSphere(stack, buffers.getBuffer(sphereType), radius, SPHERE_ALPHA);
-
-            stack.pushPose();
-            stack.mulPose(Vector3f.ZP.rotationDegrees(24.0F));
-            stack.mulPose(Vector3f.YP.rotationDegrees(time * 1.2F));
-            StasisBubbleRenderer.drawRing(stack, buffers.getBuffer(ringType), radius * 1.01F, radius * 0.12F, RING_ALPHA);
-            stack.popPose();
-
-            stack.pushPose();
-            stack.mulPose(Vector3f.ZP.rotationDegrees(-58.0F));
-            stack.mulPose(Vector3f.YP.rotationDegrees(-time * 0.8F));
-            StasisBubbleRenderer.drawRing(stack, buffers.getBuffer(ringType), radius * 1.02F, radius * 0.10F, RING_ALPHA * 0.85F);
-            stack.popPose();
-
+            StasisBubbleRenderer.drawBubble(stack, buffers, radius, ZONE_FADE, age, ZONE_BAND);
             stack.popPose();
             drew = true;
         }
@@ -151,18 +137,13 @@ public class ClientZone {
             double x = e.getX() - cam.x, y = e.getY() + e.getBbHeight() * 0.5D - cam.y, z = e.getZ() - cam.z;
             stack.pushPose();
             stack.translate(x, y, z);
-            StasisBubbleRenderer.drawSphere(stack, buffers.getBuffer(sphereType), r, 0.5F);
-            stack.pushPose();
-            stack.mulPose(Vector3f.ZP.rotationDegrees(30.0F));
-            stack.mulPose(Vector3f.YP.rotationDegrees(age * 5.0F));
-            StasisBubbleRenderer.drawRing(stack, buffers.getBuffer(ringType), r * 1.05F, r * 0.14F, 0.9F);
-            stack.popPose();
+            StasisBubbleRenderer.drawBubble(stack, buffers, r, PROJ_FADE, age, PROJ_BAND);
             stack.popPose();
             drew = true;
         }
         if (drew) {
-            buffers.endBatch(sphereType);
-            buffers.endBatch(ringType);
+            buffers.endBatch(StasisBubbleRenderer.SPHERE_TYPE);
+            buffers.endBatch(StasisBubbleRenderer.RING_TYPE);
         }
     }
 

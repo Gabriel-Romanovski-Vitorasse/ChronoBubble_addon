@@ -19,6 +19,9 @@ import java.util.List;
  * O código lê os valores direto daqui ({@code ChronoConfig.X.get()}); não há cópia em outras classes.
  * Antes de o arquivo carregar (ex.: no menu principal), {@code get()} devolve o valor padrão.
  * Os nomes e dicas da tela de configuração ficam nos arquivos de idioma ({@code config.chrono_bubble.*}).
+ * <p>
+ * ARQUIVO GERADO por {@code tools/config/genconfig.py} a partir de {@code tools/config/opts.py}: para mudar uma
+ * opção, edite o opts.py e rode o gerador (não edite este arquivo à mão).
  */
 public final class ChronoConfig {
     private ChronoConfig() {
@@ -169,6 +172,7 @@ public final class ChronoConfig {
     public static final ForgeConfigSpec.IntValue HUD_MIN_GAIN;
     public static final ForgeConfigSpec.BooleanValue HIDE_PARTICLES;
     public static final ForgeConfigSpec.DoubleValue SPHERE_SCALE;
+    public static final ForgeConfigSpec.BooleanValue SECOND_RING;
 
     static {
         ForgeConfigSpec.Builder s = new ForgeConfigSpec.Builder();
@@ -297,6 +301,7 @@ public final class ChronoConfig {
         HUD_MIN_GAIN = integer(c, "time_gain_min", "Ganho m\u00ednimo de Time num tick para mostrar", 5, 1, 1000);
         HIDE_PARTICLES = bool(c, "hide_stasis_particles", "Esconder as part\u00edculas ciano do Chrono Stasis/Grigora (precisa reabrir o jogo)", true);
         SPHERE_SCALE = dbl(c, "sphere_scale", "Tamanho das esferas dos mobs congelados (multiplicador)", 0.95, 0.3, 3.0);
+        SECOND_RING = bool(c, "second_ring", "true = desenha um segundo anel, mais fino, inclinado para o outro lado (o anime usa um s\u00f3)", false);
         c.pop();
         CLIENT_SPEC = c.build();
     }
