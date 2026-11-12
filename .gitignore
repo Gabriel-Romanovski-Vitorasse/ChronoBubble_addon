@@ -26,3 +26,7 @@ forge*changelog.txt
 
 # logs gerados pelo Forge/Gradle ao compilar
 logs
+
+# cache do Python (scripts em tools/)
+__pycache__/
+*.pyc
