@@ -191,11 +191,19 @@ public class ChronoThrowHandler {
 
     /** Chamado pela esfera de Time Steal ao acertar: vida do alvo vira Time do dono. */
     public static void stealLife(ServerPlayerEntity owner, net.minecraft.entity.Entity orb, net.minecraft.entity.LivingEntity target) {
+        // Wither: drena menos vida, mas cada ponto rende mais Time ("vida de chefe \u00e9 tempo concentrado")
+        boolean wither = WitherStasis.applies(target);
+        if (wither && ((net.minecraft.entity.boss.WitherEntity) target).getInvulnerableTicks() > 0) {
+            Msg.bar(owner, TextFormatting.GRAY, "wither_invulnerable");     // ainda nascendo: n\u00e3o recebe dano
+            return;
+        }
+        float drain = ChronoConfig.f(ChronoConfig.STEAL_DRAIN_HP) * (wither ? ChronoConfig.f(ChronoConfig.WITHER_STEAL_DRAIN) : 1.0F);
+        float perHp = ChronoConfig.f(ChronoConfig.STEAL_TIME_PER_HP) * (wither ? ChronoConfig.f(ChronoConfig.WITHER_STEAL_TIME_MULT) : 1.0F);
         float before = target.getHealth();
-        SustainedStasis.hurtDirect(target, net.minecraft.util.DamageSource.indirectMagic(orb, owner), Math.min(ChronoConfig.f(ChronoConfig.STEAL_DRAIN_HP), before));
+        SustainedStasis.hurtDirect(target, net.minecraft.util.DamageSource.indirectMagic(orb, owner), Math.min(drain, before));
         float lost = Math.max(0.0F, before - Math.max(0.0F, target.getHealth()));
         int room = ChronoConfig.MAX_TIME.get() > 0 ? ChronoConfig.MAX_TIME.get() - Math.max(0, BlockCloverBridge.getTime(owner)) : Integer.MAX_VALUE;
-        int gain = Math.min(room, Math.round(lost * ChronoConfig.f(ChronoConfig.STEAL_TIME_PER_HP)));
+        int gain = Math.min(room, Math.round(lost * perHp));
         if (gain > 0) {
             BlockCloverBridge.spend(owner, 0.0F, -gain, 0);          // tempo negativo = ganha Time
             BlockCloverBridge.syncToClient(owner);

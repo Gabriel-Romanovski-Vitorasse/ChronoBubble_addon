@@ -3,6 +3,12 @@
 ## 1.1.0 (não lançado)
 
 ### Adicionado
+- **Magias de tempo no Wither**, com regras de chefe. O Wither ignora efeitos de poção, então o Chrono Stasis do Block
+  Clover nunca pegava nele. Agora a esfera arremessada (normal ou sustentada) e o Grigora o congelam com um
+  congelamento próprio: só 30% do tempo normal (máximo 3 s), metade disso na segunda fase, e 15 s de "resistência ao
+  tempo" depois de cada congelamento. O Time Steal arremessável drena metade da vida no Wither, mas cada ponto rende o
+  dobro de Time, e avisa quando o Wither ainda está nascendo (invulnerável). Seção `wither` da config. O Ender Dragon
+  continua de fora (`grigora.skip_bosses`).
 - **Visual novo do Chrono Stasis**, mais próximo do anime, em todos os lugares onde a bolha aparece (mobs congelados,
   zona, projéteis parados, bolha fantasma do Time Hop e a esfera arremessada):
   - esfera com efeito de bolha (fresnel): borda azul, centro quase transparente e um brilho suave, igual de qualquer

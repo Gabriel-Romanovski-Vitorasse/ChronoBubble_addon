@@ -108,6 +108,10 @@ public class SustainedStasis {
     public static void begin(ServerPlayerEntity caster, LivingEntity target) {
         Effect effect = effect();
         if (!ChronoConfig.SUSTAIN_ENABLED.get() || effect == null || target == caster) return;
+        if (target instanceof WitherEntity) {                                // n\u00e3o aceita efeitos: congelamento de chefe
+            if (WitherStasis.applies(target)) WitherStasis.freeze((WitherEntity) target, Integer.MAX_VALUE / 2, caster);
+            return;
+        }
         // Uma sess\u00e3o do Grigora tem outro custo e outro limite: a esfera n\u00e3o entra nela, substitui (solta os do Grigora).
         Session old = SESSIONS.get(caster.getUUID());
         if (old != null && old.area) end(caster.getUUID(), null, null);
@@ -134,8 +138,16 @@ public class SustainedStasis {
         final double r = ChronoConfig.f(ChronoConfig.GRIGORA_RADIUS);
         List<LivingEntity> found = caster.level.getEntitiesOfClass(LivingEntity.class, caster.getBoundingBox().inflate(r),
                 e -> e != caster && e.isAlive() && e.distanceToSqr(caster) <= r * r
-                        && !(ChronoConfig.GRIGORA_SKIP_BOSSES.get() && (e instanceof EnderDragonEntity || e instanceof WitherEntity)));
-        if (found.isEmpty()) {
+                        && !(ChronoConfig.GRIGORA_SKIP_BOSSES.get() && e instanceof EnderDragonEntity));
+        // O Wither ignora efeitos: n\u00e3o entra na sess\u00e3o sustentada, ganha o congelamento curto de chefe (WitherStasis)
+        List<WitherEntity> withers = new ArrayList<>();
+        for (Iterator<LivingEntity> it = found.iterator(); it.hasNext(); ) {
+            LivingEntity e = it.next();
+            if (!(e instanceof WitherEntity)) continue;
+            it.remove();
+            if (WitherStasis.applies(e)) withers.add((WitherEntity) e);
+        }
+        if (found.isEmpty() && withers.isEmpty()) {
             Msg.bar(caster, TextFormatting.GRAY, "nobody_near");
             return;
         }
@@ -150,6 +162,9 @@ public class SustainedStasis {
         BlockCloverBridge.spend(caster, 0.0F, ChronoConfig.GRIGORA_TIME_COST.get(), 0);
         BlockCloverBridge.syncToClient(caster);
         GRIGORA_READY.put(caster.getUUID(), now + ChronoConfig.GRIGORA_COOLDOWN_TICKS.get());
+
+        for (WitherEntity w : withers) WitherStasis.freeze(w, Integer.MAX_VALUE / 2, caster);   // limitado pelas regras do Wither
+        if (found.isEmpty()) return;                                         // s\u00f3 havia Wither por perto
 
         Session s = new Session(ChronoConfig.f(ChronoConfig.GRIGORA_MANA_PER_SECOND), ChronoConfig.GRIGORA_MAX_TARGETS.get(), true);
         SESSIONS.put(caster.getUUID(), s);

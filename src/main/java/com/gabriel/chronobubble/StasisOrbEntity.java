@@ -71,6 +71,15 @@ public class StasisOrbEntity extends ThrowableEntity {
         Effect effect = BlockCloverBridge.stasisEffect();
         if (effect == null) return;
         LivingEntity target = (LivingEntity) hit;
+        if (!steal && !sustained && target instanceof net.minecraft.entity.boss.WitherEntity) {
+            // o Wither ignora efeitos de po\u00e7\u00e3o: congelamento pr\u00f3prio, curto, com resist\u00eancia ao tempo
+            if (WitherStasis.applies(target)) {
+                WitherStasis.freeze((net.minecraft.entity.boss.WitherEntity) target,
+                        (int) Math.round(ChronoConfig.THROW_FREEZE_SECONDS.get() * 20.0D),
+                        getOwner() instanceof net.minecraft.entity.player.PlayerEntity ? (net.minecraft.entity.player.PlayerEntity) getOwner() : null);
+            }
+            return;
+        }
         if (steal && getOwner() instanceof net.minecraft.entity.player.ServerPlayerEntity) {
             ChronoThrowHandler.stealLife((net.minecraft.entity.player.ServerPlayerEntity) getOwner(), this, target);
             return;
