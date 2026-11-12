@@ -117,6 +117,13 @@ public final class ChronoConfig {
     public static final ForgeConfigSpec.IntValue GRIGORA_TIME_COST;
     public static final ForgeConfigSpec.IntValue GRIGORA_COOLDOWN_TICKS;
     public static final ForgeConfigSpec.BooleanValue GRIGORA_SKIP_BOSSES;
+    public static final ForgeConfigSpec.BooleanValue WITHER_ENABLED;
+    public static final ForgeConfigSpec.DoubleValue WITHER_FREEZE_FRACTION;
+    public static final ForgeConfigSpec.IntValue WITHER_MAX_FREEZE_TICKS;
+    public static final ForgeConfigSpec.BooleanValue WITHER_PHASE_HALVES;
+    public static final ForgeConfigSpec.IntValue WITHER_IMMUNITY_SECONDS;
+    public static final ForgeConfigSpec.DoubleValue WITHER_STEAL_DRAIN;
+    public static final ForgeConfigSpec.DoubleValue WITHER_STEAL_TIME_MULT;
     public static final ForgeConfigSpec.BooleanValue ZONE_ENABLED;
     public static final ForgeConfigSpec.DoubleValue ZONE_RADIUS;
     public static final ForgeConfigSpec.DoubleValue ZONE_MANA_PER_SECOND;
@@ -233,7 +240,17 @@ public final class ChronoConfig {
         GRIGORA_MANA_PER_SECOND = dbl(s, "mana_per_second", "Mana por segundo PARA CADA alvo", 1.5, 0.0, 1000.0);
         GRIGORA_TIME_COST = integer(s, "time_cost", "Time gasto ao ativar (precisa ter MAIS que isso)", 50, 0, 100000);
         GRIGORA_COOLDOWN_TICKS = integer(s, "cooldown_ticks", "Recarga em ticks", 200, 0, 100000);
-        GRIGORA_SKIP_BOSSES = bool(s, "skip_bosses", "true = Ender Dragon e Wither n\u00e3o s\u00e3o presos", true);
+        GRIGORA_SKIP_BOSSES = bool(s, "skip_bosses", "true = o Ender Dragon n\u00e3o \u00e9 preso. O Wither segue as regras da se\u00e7\u00e3o 'wither'", true);
+        s.pop();
+
+        section(s, "wither", true, "O Wither ignora efeitos de po\u00e7\u00e3o, ent\u00e3o o Chrono Stasis normal n\u00e3o pega nele. Com esta se\u00e7\u00e3o, Chrono Stasis (arremessado, sustentado ou Grigora) e Time Steal arremess\u00e1vel funcionam no Wither, com regras pr\u00f3prias: congelamento curto, mais curto na segunda fase, e uma resist\u00eancia ao tempo depois de cada congelamento.");
+        WITHER_ENABLED = bool(s, "enabled", "true = as magias de tempo funcionam no Wither com as regras abaixo", true);
+        WITHER_FREEZE_FRACTION = dbl(s, "freeze_fraction", "O Wither fica congelado s\u00f3 esta fra\u00e7\u00e3o do tempo normal (0.3 = 30%)", 0.3, 0.05, 1.0);
+        WITHER_MAX_FREEZE_TICKS = integer(s, "max_freeze_ticks", "Limite do congelamento do Wither (20 = 1 s)", 60, 10, 600);
+        WITHER_PHASE_HALVES = bool(s, "second_phase_halves", "true = abaixo de metade da vida (com a armadura), o congelamento dura metade", true);
+        WITHER_IMMUNITY_SECONDS = integer(s, "immunity_seconds", "Depois de cada congelamento, o Wither n\u00e3o pode ser congelado de novo por tantos segundos", 15, 0, 300);
+        WITHER_STEAL_DRAIN = dbl(s, "steal_drain_fraction", "O Time Steal arremess\u00e1vel drena s\u00f3 esta fra\u00e7\u00e3o da vida que drenaria", 0.5, 0.05, 1.0);
+        WITHER_STEAL_TIME_MULT = dbl(s, "steal_time_multiplier", "Cada ponto de vida drenado do Wither rende tantas vezes mais Time", 2.0, 0.0, 10.0);
         s.pop();
 
         section(s, "zone", true, "Zona de proj\u00e9teis: tecla B");

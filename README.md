@@ -61,6 +61,15 @@ Shift + **Time Healing** faz voltar, em volta de você, os blocos quebrados ou e
 - Não apaga nada: se o lugar já foi ocupado por outro bloco, aquele bloco não volta.
 - Custo: Time fixo + Time por bloco + mana, com recarga (seção `restoration` da config).
 
+### Wither
+
+O Wither ignora efeitos de poção, então ganhou regras próprias (seção `wither` da config):
+
+- Chrono Stasis (arremessado, sustentado) e Grigora congelam o Wither só 30% do tempo normal (no máximo 3 s), metade
+  disso na segunda fase (abaixo de metade da vida), e depois ele resiste ao tempo por 15 s.
+- O Time Steal arremessável drena metade da vida, mas cada ponto vale o dobro de Time.
+- O Ender Dragon continua de fora: congelar a IA dele quebraria as fases da luta.
+
 ### Grimório do Tempo
 
 Posição e tamanho ajustáveis na config do cliente (tecla **K**, página "Visual e HUD"): lado, altura, frente/trás e
