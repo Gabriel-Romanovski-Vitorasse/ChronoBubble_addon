@@ -45,6 +45,12 @@ public class StasisBubbleRenderer {
      */
     private static final float RING_TILT_TOWARD = 22.0F;
     private static final float RING_TILT_SIDE = 12.0F;
+    /**
+     * Varia\u00e7\u00e3o por bolha (como no anime, cada uma tem a faixa num \u00e2ngulo diferente): sorteada a partir do id da
+     * entidade, ent\u00e3o \u00e9 fixa para cada mob e n\u00e3o fica pulando. Faixas em graus em volta dos valores acima.
+     */
+    private static final float TOWARD_VARIATION = 14.0F;
+    private static final float SIDE_VARIATION = 28.0F;
     private static final float RING_SPEED = 0.8F;
     /** Largura da faixa dos mobs congelados, em fra\u00e7\u00e3o do raio. */
     private static final float MOB_BAND = 0.18F;
@@ -100,7 +106,7 @@ public class StasisBubbleRenderer {
         stack.pushPose();
         stack.translate(0.0D, entity.getBbHeight() * 0.5D, 0.0D);
         float pulse = 1.0F + 0.015F * (float) Math.sin(time * 0.15F);       // leve pulsa\u00e7\u00e3o
-        drawBubble(stack, event.getBuffers(), radius * pulse, ClientStasis.flicker(entity, time), time, MOB_BAND);
+        drawBubble(stack, event.getBuffers(), radius * pulse, ClientStasis.flicker(entity, time), time, MOB_BAND, entity.getId());
         stack.popPose();
     }
 
@@ -110,8 +116,14 @@ public class StasisBubbleRenderer {
      * @param fade      0..1, multiplica a opacidade de tudo (anima\u00e7\u00f5es, piscar do tempo inst\u00e1vel)
      * @param time      ticks, para o giro da faixa
      * @param bandRatio largura da faixa em fra\u00e7\u00e3o do raio (esferas pequenas usam faixa proporcionalmente mais larga)
+     * @param seed      n\u00famero fixo da bolha (ex.: id da entidade): escolhe a inclina\u00e7\u00e3o, o sentido e a fase da faixa
      */
-    public static void drawBubble(MatrixStack stack, IRenderTypeBuffer buffers, float radius, float fade, float time, float bandRatio) {
+    public static void drawBubble(MatrixStack stack, IRenderTypeBuffer buffers, float radius, float fade, float time,
+                                  float bandRatio, int seed) {
+        float toward = RING_TILT_TOWARD + TOWARD_VARIATION * signedNoise(seed, 1);
+        float side = RING_TILT_SIDE + SIDE_VARIATION * signedNoise(seed, 2);
+        float spin = (signedNoise(seed, 3) < 0.0F ? -1.0F : 1.0F) * time * RING_SPEED + 360.0F * signedNoise(seed, 4);
+
         drawSphere(stack, buffers.getBuffer(SPHERE_TYPE), radius, SPHERE_ALPHA * fade);
 
         // vira a faixa para quem olha (s\u00f3 em volta do eixo vertical): +Z local passa a apontar para a c\u00e2mera
@@ -120,21 +132,48 @@ public class StasisBubbleRenderer {
         stack.mulPose(Vector3f.YP.rotationDegrees(180.0F - yaw));
 
         stack.pushPose();
-        stack.mulPose(Vector3f.XP.rotationDegrees(RING_TILT_TOWARD));       // lado perto de quem olha desce
-        stack.mulPose(Vector3f.ZP.rotationDegrees(RING_TILT_SIDE));
-        stack.mulPose(Vector3f.YP.rotationDegrees(time * RING_SPEED));
+        stack.mulPose(Vector3f.XP.rotationDegrees(toward));                 // lado perto de quem olha desce
+        stack.mulPose(Vector3f.ZP.rotationDegrees(side));
+        stack.mulPose(Vector3f.YP.rotationDegrees(spin));
         drawRing(stack, buffers.getBuffer(RING_TYPE), radius * 1.04F, radius * bandRatio, RING_ALPHA * fade);
         stack.popPose();
 
         if (ChronoConfig.SECOND_RING.get()) {
             stack.pushPose();
-            stack.mulPose(Vector3f.XP.rotationDegrees(-RING_TILT_TOWARD));
-            stack.mulPose(Vector3f.ZP.rotationDegrees(-55.0F));
-            stack.mulPose(Vector3f.YP.rotationDegrees(-time * RING_SPEED * 0.6F));
+            stack.mulPose(Vector3f.XP.rotationDegrees(-toward));
+            stack.mulPose(Vector3f.ZP.rotationDegrees(side - 65.0F));
+            stack.mulPose(Vector3f.YP.rotationDegrees(-spin * 0.6F));
             drawRing(stack, buffers.getBuffer(RING_TYPE), radius * 1.08F, radius * bandRatio * 0.75F, RING_ALPHA * 0.8F * fade);
             stack.popPose();
         }
         stack.popPose();
+    }
+
+    /** N\u00famero "aleat\u00f3rio" em [-1, 1], sempre o mesmo para o mesmo (seed, canal). Sem criar objetos a cada quadro. */
+    static float signedNoise(int seed, int channel) {
+        int h = seed * 0x9E3779B1 + channel * 0x85EBCA77;
+        h ^= h >>> 15;
+        h *= 0x2C1B3C6D;
+        h ^= h >>> 12;
+        h *= 0x297A2D39;
+        h ^= h >>> 15;
+        return (h & 0xFFFFFF) / (float) 0x7FFFFF - 1.0F;
+    }
+
+    /**
+     * Quanto uma superf\u00edcie est\u00e1 de frente para quem olha: 1 = de frente, 0 = de lado (silhueta). Recebe a posi\u00e7\u00e3o e a
+     * normal no espa\u00e7o local da pilha; a pose j\u00e1 inclui a c\u00e2mera, que fica na origem. Usado pela esfera e pela
+     * aura do grim\u00f3rio.
+     */
+    static float facing(Matrix4f pose, Matrix3f normalMat, float x, float y, float z, float nx, float ny, float nz) {
+        Vector4f p = new Vector4f(x, y, z, 1.0F);
+        p.transform(pose);
+        Vector3f n = new Vector3f(nx, ny, nz);
+        n.transform(normalMat);
+        n.normalize();
+        float dist = (float) Math.sqrt(p.x() * p.x() + p.y() * p.y() + p.z() * p.z());
+        if (dist < 1.0E-4F) return 1.0F;
+        return Math.min(1.0F, Math.abs(n.x() * p.x() + n.y() * p.y() + n.z() * p.z()) / dist);
     }
 
     /**
@@ -172,16 +211,10 @@ public class StasisBubbleRenderer {
     /** V\u00e9rtice da esfera de raio {@code r} na dire\u00e7\u00e3o unit\u00e1ria (nx, ny, nz), com cor e opacidade do fresnel. */
     private static void bubbleVertex(IVertexBuilder b, Matrix4f pose, Matrix3f normalMat, float r,
                                      float nx, float ny, float nz, float u, float v, float alphaF) {
-        // posi\u00e7\u00e3o e normal no espa\u00e7o da c\u00e2mera (a c\u00e2mera est\u00e1 na origem)
-        Vector4f p = new Vector4f(r * nx, r * ny, r * nz, 1.0F);
-        p.transform(pose);
+        float rim = (float) Math.pow(1.0F - facing(pose, normalMat, r * nx, r * ny, r * nz, nx, ny, nz), RIM_POWER);
         Vector3f n = new Vector3f(nx, ny, nz);
         n.transform(normalMat);
         n.normalize();
-        float dist = (float) Math.sqrt(p.x() * p.x() + p.y() * p.y() + p.z() * p.z());
-        float facing = dist < 1.0E-4F ? 1.0F
-                : Math.abs(-(n.x() * p.x() + n.y() * p.y() + n.z() * p.z()) / dist);   // 1 = de frente, 0 = de lado
-        float rim = (float) Math.pow(1.0F - Math.min(1.0F, facing), RIM_POWER);
         float spec = (float) Math.pow(Math.max(0.0F, n.dot(HIGHLIGHT_DIR)), 24.0F) * 0.7F;
 
         float red = lerp(CENTER_RGB[0], EDGE_RGB[0], rim) + spec;

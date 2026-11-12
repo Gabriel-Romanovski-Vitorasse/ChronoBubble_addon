@@ -27,7 +27,7 @@ public class StasisOrbRenderer extends EntityRenderer<StasisOrbEntity> {
         stack.translate(0.0D, entity.getBbHeight() * 0.5D, 0.0D);
         // a mesma bolha dos mobs congelados, em miniatura: esfera com a faixa de numerais (mais larga, para aparecer
         // num objeto t\u00e3o pequeno, e girando mais r\u00e1pido, para dar a sensa\u00e7\u00e3o de movimento)
-        StasisBubbleRenderer.drawBubble(stack, buffers, RADIUS, 1.0F, time * ORB_SPIN, ORB_BAND);
+        StasisBubbleRenderer.drawBubble(stack, buffers, RADIUS, 1.0F, time * ORB_SPIN, ORB_BAND, entity.getId());
         stack.popPose();
         super.render(entity, yaw, partialTicks, stack, buffers, light);
     }

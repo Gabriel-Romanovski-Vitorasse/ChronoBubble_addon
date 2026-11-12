@@ -11,7 +11,12 @@
     translúcido, bordas brancas, numerais brancos irregulares com letrinhas, sem divisórias), sem numerais esticados
     nem espelhados na frente;
   - a esfera arremessada ganhou a mesma faixa em miniatura;
-  - segundo anel opcional: `visual.second_ring` (desligado por padrão).
+  - segundo anel opcional: `visual.second_ring` (desligado por padrão);
+  - cada bolha tem a faixa num ângulo e sentido próprios (sorteados pelo id do mob, fixos), como no anime.
+- **Grimório do Julius refeito**: bloco de páginas brancas cujas bordas formam um redemoinho visto de cima (espiral
+  mais fechada no centro, que "respira"), linhas verticais na lateral, aura ciano brilhante mais forte na silhueta e
+  uma estrela de quatro pontas cintilando no centro do redemoinho. O grimório de uma página e a animação das páginas
+  voltando continuam funcionando.
 - Pasta `tools/` com os geradores da textura da faixa, da config e uma prévia da bolha fora do jogo.
 - "Antever ataques" agora exige a passiva **Time Magic Zone** do Block Clover (a magia que "sente ataques futuros")
   desbloqueada e ativa. Opção `precognition.require_time_magic_zone`.

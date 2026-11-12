@@ -121,7 +121,7 @@ public class ClientZone {
 
             stack.pushPose();
             stack.translate(x, y, z);
-            StasisBubbleRenderer.drawBubble(stack, buffers, radius, ZONE_FADE, age, ZONE_BAND);
+            StasisBubbleRenderer.drawBubble(stack, buffers, radius, ZONE_FADE, age, ZONE_BAND, e.getId());
             stack.popPose();
             drew = true;
         }
@@ -137,7 +137,7 @@ public class ClientZone {
             double x = e.getX() - cam.x, y = e.getY() + e.getBbHeight() * 0.5D - cam.y, z = e.getZ() - cam.z;
             stack.pushPose();
             stack.translate(x, y, z);
-            StasisBubbleRenderer.drawBubble(stack, buffers, r, PROJ_FADE, age, PROJ_BAND);
+            StasisBubbleRenderer.drawBubble(stack, buffers, r, PROJ_FADE, age, PROJ_BAND, e.getId());
             stack.popPose();
             drew = true;
         }
