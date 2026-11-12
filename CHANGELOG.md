@@ -3,6 +3,12 @@
 ## 1.1.0 (não lançado)
 
 ### Adicionado
+- "Antever ataques" agora exige a passiva **Time Magic Zone** do Block Clover (a magia que "sente ataques futuros")
+  desbloqueada e ativa. Opção `precognition.require_time_magic_zone`.
+- A passiva **Time Ressurection** do Block Clover age antes do renascimento pela Swallowtail: se estiver pronta, salva
+  o jogador também de golpes que matariam de uma vez (o Block Clover só a checava no tick seguinte) e a Swallowtail
+  fica intacta. Opção `rebirth.time_ressurection_first`.
+- `/chronobubble status` mostra se a Time Magic Zone está ativa e se a Time Ressurection está pronta.
 - Comando `/chronobubble status [jogador]` com Time, mana, renascimento, Swallowtail e habilidades ativas.
 - Conquistas: *Asas do Tempo* (obter uma Swallowtail), *Reserva Completa* (encher uma) e *O Tempo Não Para*
   (renascer).
