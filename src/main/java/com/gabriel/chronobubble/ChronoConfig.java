@@ -162,6 +162,16 @@ public final class ChronoConfig {
     public static final ForgeConfigSpec.BooleanValue REHOP_FREEZE_ENEMIES;
     public static final ForgeConfigSpec.BooleanValue REHOP_FREEZE_PLAYERS;
     public static final ForgeConfigSpec.BooleanValue REHOP_SKIP_BOSSES;
+    public static final ForgeConfigSpec.BooleanValue REST_ENABLED;
+    public static final ForgeConfigSpec.DoubleValue REST_RADIUS;
+    public static final ForgeConfigSpec.IntValue REST_WINDOW_SECONDS;
+    public static final ForgeConfigSpec.IntValue REST_MAX_BLOCKS;
+    public static final ForgeConfigSpec.IntValue REST_TIME_COST;
+    public static final ForgeConfigSpec.IntValue REST_TIME_PER_BLOCK;
+    public static final ForgeConfigSpec.DoubleValue REST_MANA_COST;
+    public static final ForgeConfigSpec.IntValue REST_COOLDOWN_TICKS;
+    public static final ForgeConfigSpec.IntValue REST_BLOCKS_PER_TICK;
+    public static final ForgeConfigSpec.BooleanValue REST_REQUIRE_COMBAT;
     public static final ForgeConfigSpec.IntValue SWALLOW_CAPACITY;
     public static final ForgeConfigSpec.IntValue SWALLOW_TRANSFER;
     public static final ForgeConfigSpec.BooleanValue REBIRTH_ENABLED;
@@ -172,6 +182,11 @@ public final class ChronoConfig {
     public static final ForgeConfigSpec.IntValue HUD_MIN_GAIN;
     public static final ForgeConfigSpec.BooleanValue HIDE_PARTICLES;
     public static final ForgeConfigSpec.DoubleValue SPHERE_SCALE;
+    public static final ForgeConfigSpec.BooleanValue GRIMOIRE_ENABLED;
+    public static final ForgeConfigSpec.DoubleValue GRIMOIRE_SIDE;
+    public static final ForgeConfigSpec.DoubleValue GRIMOIRE_HEIGHT;
+    public static final ForgeConfigSpec.DoubleValue GRIMOIRE_FRONT;
+    public static final ForgeConfigSpec.DoubleValue GRIMOIRE_SCALE;
     public static final ForgeConfigSpec.BooleanValue SECOND_RING;
 
     static {
@@ -281,6 +296,19 @@ public final class ChronoConfig {
         REHOP_SKIP_BOSSES = bool(s, "skip_bosses", "true = Ender Dragon e Wither n\u00e3o param", true);
         s.pop();
 
+        section(s, "restoration", true, "Restaura\u00e7\u00e3o do tempo: Shift + Time Healing. Faz voltar os blocos quebrados ou explodidos h\u00e1 pouco, em volta de voc\u00ea, do mais recente para o mais antigo. Para n\u00e3o duplicar itens, um bloco s\u00f3 volta se os itens que ele derrubou ainda estiverem no ch\u00e3o (eles somem quando o bloco volta).");
+        REST_ENABLED = bool(s, "enabled", "Liga/desliga a restaura\u00e7\u00e3o do tempo", true);
+        REST_RADIUS = dbl(s, "radius", "Raio em volta do jogador; uma explos\u00e3o que encosta no raio volta inteira", 8.0, 1.0, 32.0);
+        REST_WINDOW_SECONDS = integer(s, "window_seconds", "S\u00f3 blocos destru\u00eddos nos \u00faltimos tantos segundos podem voltar", 60, 5, 600);
+        REST_MAX_BLOCKS = integer(s, "max_blocks", "M\u00e1ximo de blocos restaurados de uma vez", 256, 1, 4096);
+        REST_TIME_COST = integer(s, "time_cost", "Time gasto a cada uso (precisa ter MAIS que isso)", 30, 0, 100000);
+        REST_TIME_PER_BLOCK = integer(s, "time_per_block", "Time extra gasto por bloco restaurado", 2, 0, 1000);
+        REST_MANA_COST = dbl(s, "mana_cost", "Mana gasta a cada uso (precisa ter MAIS que isso)", 25.0, 0.0, 1000.0);
+        REST_COOLDOWN_TICKS = integer(s, "cooldown_ticks", "Recarga em ticks (20 = 1 segundo)", 600, 0, 100000);
+        REST_BLOCKS_PER_TICK = integer(s, "blocks_per_tick", "Quantos blocos voltam por tick; menos = rebobinar mais lento", 6, 1, 64);
+        REST_REQUIRE_COMBAT = bool(s, "require_combat_bar", "true = s\u00f3 funciona com a combat bar ativa", true);
+        s.pop();
+
         section(s, "swallowtail", true, "Swallowtail: artefato que armazena Time");
         SWALLOW_CAPACITY = integer(s, "capacity", "Capacidade de Time armazenado", 5000, 1, 10000000);
         SWALLOW_TRANSFER = integer(s, "transfer_per_use", "Time que passa por clique", 100, 1, 100000);
@@ -301,6 +329,11 @@ public final class ChronoConfig {
         HUD_MIN_GAIN = integer(c, "time_gain_min", "Ganho m\u00ednimo de Time num tick para mostrar", 5, 1, 1000);
         HIDE_PARTICLES = bool(c, "hide_stasis_particles", "Esconder as part\u00edculas ciano do Chrono Stasis/Grigora (precisa reabrir o jogo)", true);
         SPHERE_SCALE = dbl(c, "sphere_scale", "Tamanho das esferas dos mobs congelados (multiplicador)", 0.95, 0.3, 3.0);
+        GRIMOIRE_ENABLED = bool(c, "grimoire_enabled", "true = desenha o grim\u00f3rio de p\u00e1ginas em espiral ao lado de quem est\u00e1 com o grim\u00f3rio de Tempo em combate", true);
+        GRIMOIRE_SIDE = dbl(c, "grimoire_side", "Deslocamento lateral em blocos. Negativo = lado direito do jogador, positivo = lado esquerdo, 0 = no meio", -0.85, -3.0, 3.0);
+        GRIMOIRE_HEIGHT = dbl(c, "grimoire_height", "Altura em rela\u00e7\u00e3o aos p\u00e9s do jogador, em blocos", 1.15, 0.0, 4.0);
+        GRIMOIRE_FRONT = dbl(c, "grimoire_front", "Deslocamento em blocos. Positivo = \u00e0 frente do jogador, negativo = atr\u00e1s", 0.15, -3.0, 3.0);
+        GRIMOIRE_SCALE = dbl(c, "grimoire_scale", "Tamanho do grim\u00f3rio (multiplicador; 1 = normal)", 1.0, 0.2, 4.0);
         SECOND_RING = bool(c, "second_ring", "true = desenha um segundo anel, mais fino, inclinado para o outro lado (o anime usa um s\u00f3)", false);
         c.pop();
         CLIENT_SPEC = c.build();

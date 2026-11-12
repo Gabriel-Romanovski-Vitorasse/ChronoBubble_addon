@@ -13,10 +13,13 @@
   - a esfera arremessada ganhou a mesma faixa em miniatura;
   - segundo anel opcional: `visual.second_ring` (desligado por padrão);
   - cada bolha tem a faixa num ângulo e sentido próprios (sorteados pelo id do mob, fixos), como no anime.
-- **Grimório do Julius refeito**: bloco de páginas brancas cujas bordas formam um redemoinho visto de cima (espiral
-  mais fechada no centro, que "respira"), linhas verticais na lateral, aura ciano brilhante mais forte na silhueta e
-  uma estrela de quatro pontas cintilando no centro do redemoinho. O grimório de uma página e a animação das páginas
-  voltando continuam funcionando.
+- **Restauração do tempo** (Shift + Time Healing): faz voltar os blocos quebrados ou explodidos há pouco em volta do
+  jogador, do mais recente para o mais antigo, aos poucos e com partículas. Sem duplicar itens: um bloco só volta se
+  os itens que ele derrubou ainda estiverem no chão, e eles somem quando o bloco volta; explosões voltam inteiras ou
+  não voltam; minérios (dão XP), blocos com conteúdo (baús...) e blocos de duas partes (portas, camas) ficam de fora.
+  Custo em Time (fixo + por bloco) e mana, com recarga. Seção `restoration` da config.
+- Posição e tamanho do grimório do Tempo ajustáveis na config do cliente (`visual.grimoire_side`, `grimoire_height`,
+  `grimoire_front`, `grimoire_scale`) e opção para desligá-lo (`visual.grimoire_enabled`).
 - Pasta `tools/` com os geradores da textura da faixa, da config e uma prévia da bolha fora do jogo.
 - "Antever ataques" agora exige a passiva **Time Magic Zone** do Block Clover (a magia que "sente ataques futuros")
   desbloqueada e ativa. Opção `precognition.require_time_magic_zone`.

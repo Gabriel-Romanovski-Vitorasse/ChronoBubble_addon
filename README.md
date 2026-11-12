@@ -26,6 +26,7 @@ outra versão, é recusado ao conectar.
 | Efeitos extras do Time Hop (sem dano de queda, chegada protegida, pulso de tempo parado, bolha fantasma) | automático ao usar o Time Hop |
 | Time Hop reformulado (deslize dentro de uma esfera de tempo parado, no lugar do teletransporte) | desligado por padrão; ligue em `hop_rework.enabled` |
 | Números romanos subindo ao roubar Time | automático |
+| Restauração do tempo: blocos quebrados ou explodidos há pouco voltam (sem duplicar itens; ver abaixo) | Shift + Time Healing |
 | Swallowtail: artefato que armazena Time | clique direito guarda, Shift + clique direito devolve |
 | Renascimento com grimório de uma página | ver abaixo |
 | Tela de configuração | tecla **K** ou Mods → Chrono Bubble → Config |
@@ -45,6 +46,25 @@ Todas as teclas podem ser trocadas em Opções → Controles → Chrono Bubble.
 - **A passiva Time Ressurection do Block Clover vem antes da Swallowtail.** Se ela estiver pronta (carga cheia e mais
   de 300 de Time), ela salva o jogador até de um golpe que mataria de uma vez, consumindo todo o Time como de costume,
   e a Swallowtail não é usada. Se não estiver pronta, vale o renascimento pela Swallowtail.
+
+### Restauração do tempo
+
+Shift + **Time Healing** faz voltar, em volta de você, os blocos quebrados ou explodidos nos últimos segundos
+(padrão: 60 s, raio 8), do mais recente para o mais antigo.
+
+- **Não duplica itens:** um bloco só volta se os itens que ele derrubou ainda estiverem no chão por perto, e eles
+  somem quando o bloco volta. Se alguém já pegou, aquele bloco não volta.
+- Uma explosão volta inteira ou não volta.
+- Ficam de fora: minérios e outros blocos que soltam XP, blocos com conteúdo (baús, fornalhas...) e blocos de duas
+  partes (portas, camas, plantas altas). Tochas e outros blocos que caem sozinhos quando o apoio some também não
+  são registrados.
+- Não apaga nada: se o lugar já foi ocupado por outro bloco, aquele bloco não volta.
+- Custo: Time fixo + Time por bloco + mana, com recarga (seção `restoration` da config).
+
+### Grimório do Tempo
+
+Posição e tamanho ajustáveis na config do cliente (tecla **K**, página "Visual e HUD"): lado, altura, frente/trás e
+tamanho. Também dá para desligá-lo.
 
 ### Receita da Swallowtail
 

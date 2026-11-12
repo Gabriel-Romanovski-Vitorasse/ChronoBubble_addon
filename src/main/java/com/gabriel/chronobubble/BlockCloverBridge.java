@@ -36,6 +36,7 @@ public class BlockCloverBridge {
     public static final String CLS_GRIGORA = PKG + "spells.time.ChronoStasisGrigoraAbility";
     public static final String CLS_STEAL = PKG + "spells.time.TimeStealAbility";
     public static final String CLS_HOP = PKG + "spells.time.TimeHopAbility";
+    public static final String CLS_HEAL = PKG + "spells.time.TimeHealAbility";
     /** Passiva "Time Magic Zone": sente ataques futuros. */
     public static final String CLS_MAGIC_ZONE = PKG + "spells.time.TimeMagicManaZoneAbility";
     /** Passiva "Time Ressurection": com a carga cheia, consome todo o Time e cura o jogador quase morto. */
