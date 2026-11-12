@@ -87,7 +87,7 @@ public class ClientHopGhost {
             if (radius < 0.05F) continue;
             stack.pushPose();
             stack.translate(x, y + 0.9D, z);
-            StasisBubbleRenderer.drawBubble(stack, buffers, radius, FADE, age, BAND);
+            StasisBubbleRenderer.drawBubble(stack, buffers, radius, FADE, age, BAND, g.p.playerId * 31 + (int) g.start);
             stack.popPose();
             buffers.endBatch(StasisBubbleRenderer.SPHERE_TYPE);
             buffers.endBatch(StasisBubbleRenderer.RING_TYPE);
