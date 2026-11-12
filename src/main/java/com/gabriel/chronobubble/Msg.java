@@ -27,6 +27,11 @@ public final class Msg {
         player.displayClientMessage(tr(color, key, args), true);
     }
 
+    /** Mostra a mensagem no chat (para avisos longos, que não cabem na action bar). */
+    public static void chat(PlayerEntity player, TextFormatting color, String key, Object... args) {
+        player.displayClientMessage(tr(color, key, args), false);
+    }
+
     /** Número com uma casa decimal, sempre com ponto (não depende do idioma do sistema). */
     public static String f1(double value) {
         return String.format(Locale.ROOT, "%.1f", value);
