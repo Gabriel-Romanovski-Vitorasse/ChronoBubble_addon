@@ -20,7 +20,7 @@ outra versão, é recusado ao conectar.
 | Time Steal arremessável (a vida drenada vira Time) | Shift + Time Steal |
 | Chrono Stasis sustentado (prende até N alvos; o dano recebido fica guardado e cai de uma vez ao soltar) | Alt + Shift + Chrono Stasis |
 | Chrono Stasis Grigora sustentado (prende todos em volta) | Alt + Chrono Stasis Grigora |
-| Zona de Chrono Stasis (para projéteis de outros no ar) | tecla **B** |
+| Zona de Chrono Stasis: para projéteis de outros no ar e, depois de 2 s, acelera o tempo deles até se desfazerem | tecla **B** |
 | Acelerar o tempo (Velocidade e Pressa para você, Lentidão para os mobs em volta) | tecla **V** |
 | Antever ataques (avisa projéteis e mobs prestes a te atingir) | automático com a passiva **Time Magic Zone** do Block Clover ativa |
 | Efeitos extras do Time Hop (sem dano de queda, chegada protegida, pulso de tempo parado, bolha fantasma) | automático ao usar o Time Hop |
@@ -82,6 +82,19 @@ M V M      M = Pedregulho com musgo
 D C D      V = Trepadeira
 M V M      D = Diamante, C = Relógio
 ```
+
+## Trocar os sons
+
+Os sons ficam em `src/main/resources/assets/chrono_bubble/sounds/` e são ligados aos eventos em `sounds.json`:
+
+| Evento | Quando toca | Arquivo hoje |
+|---|---|---|
+| `stasis_start` | o tempo para (congelamento, zona, Grigora...) | `stasis_start.ogg` |
+| `stasis_end` | o tempo volta a correr | `stasis_end.ogg` |
+| `time_dissolve` | a zona desfaz um projétil | `stasis_end.ogg`, mais agudo |
+
+Para trocar: coloque o novo arquivo `.ogg` (Ogg Vorbis, de preferência mono) na pasta `sounds/` e mude o `"name"` do
+evento no `sounds.json` (por exemplo `"chrono_bubble:meu_som"` para `sounds/meu_som.ogg`). Não precisa mexer no código.
 
 ## Configuração
 

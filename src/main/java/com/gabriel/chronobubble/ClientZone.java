@@ -31,6 +31,11 @@ public class ClientZone {
     /** Orbe em volta de cada proj\u00e9til parado (esfera pequena: faixa proporcionalmente mais larga). */
     private static final float PROJ_FADE = 0.85F;
     private static final float PROJ_BAND = 0.25F;
+    /**
+     * Acelera\u00e7\u00e3o da faixa do proj\u00e9til que vai se desfazer: o giro cresce com o quadrado do tempo, at\u00e9 cerca de
+     * 1 + 2 x DISSOLVE_SPIN vezes a velocidade normal no fim.
+     */
+    private static final float DISSOLVE_SPIN = 30.0F;
     private static final float POP_TICKS = 8.0F;
 
     public static KeyBinding KEY;
@@ -134,10 +139,23 @@ public class ClientZone {
             float age = mc.level.getGameTime() + pt - en.getValue();
             float s = Math.max(0.0F, Math.min(1.0F, age / 5.0F));
             float r = (0.35F + Math.max(e.getBbWidth(), e.getBbHeight()) * 0.5F) * s * s * (3.0F - 2.0F * s);
+            float spin = age;
+            float fade = PROJ_FADE;
+            if (StasisField.dissolves(e)) {
+                // tempo acelerado: a faixa gira cada vez mais r\u00e1pido; no fim a bolha encolhe e pisca at\u00e9 sumir
+                float total = Math.max(1.0F, StasisField.dissolveTicks());
+                float k = Math.min(1.0F, age / total);
+                spin = age + DISSOLVE_SPIN * total * k * k;
+                if (k > 0.75F) {
+                    float end = (k - 0.75F) / 0.25F;
+                    r *= 1.0F - 0.45F * end;
+                    fade *= 1.0F - 0.5F * end * (0.5F + 0.5F * (float) Math.sin(age * 2.2F));
+                }
+            }
             double x = e.getX() - cam.x, y = e.getY() + e.getBbHeight() * 0.5D - cam.y, z = e.getZ() - cam.z;
             stack.pushPose();
             stack.translate(x, y, z);
-            StasisBubbleRenderer.drawBubble(stack, buffers, r, PROJ_FADE, age, PROJ_BAND, e.getId());
+            StasisBubbleRenderer.drawBubble(stack, buffers, r, fade, spin, PROJ_BAND, e.getId());
             stack.popPose();
             drew = true;
         }

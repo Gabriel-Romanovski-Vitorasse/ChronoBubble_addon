@@ -328,5 +328,12 @@
   "config.chrono_bubble.wither.steal_time_multiplier.tooltip": "Cada ponto de vida drenado do Wither rende tantas vezes mais Time",
   "msg.chrono_bubble.wither_frozen": "Wither congelado por %ss: ele resiste ao tempo.",
   "msg.chrono_bubble.wither_resists": "O Wither ainda resiste ao tempo por %ss.",
-  "msg.chrono_bubble.wither_invulnerable": "O Wither ainda está nascendo: invulnerável."
+  "msg.chrono_bubble.wither_invulnerable": "O Wither ainda está nascendo: invulnerável.",
+  "config.chrono_bubble.zone.dissolve_seconds": "Desfazer projéteis após (s, 0 = nunca)",
+  "config.chrono_bubble.zone.dissolve_seconds.tooltip": "Como no anime: o projétil parado pela zona tem o tempo acelerado e se desfaz depois de tantos segundos. 0 = fica parado até a zona desligar e depois volta a voar",
+  "config.chrono_bubble.zone.dissolve_mana": "Mana por projétil desfeito",
+  "config.chrono_bubble.zone.dissolve_mana.tooltip": "Mana gasta pelo dono da zona a cada projétil desfeito (sem mana, o projétil fica só parado)",
+  "config.chrono_bubble.zone.dissolve_arrows": "Flechas comuns também se desfazem",
+  "config.chrono_bubble.zone.dissolve_arrows.tooltip": "true = flechas também se desfazem (não dá para recolher). Tridentes nunca se desfazem: são itens de jogador",
+  "chrono_bubble.subtitle.time_dissolve": "Projétil se desfaz no tempo"
 }

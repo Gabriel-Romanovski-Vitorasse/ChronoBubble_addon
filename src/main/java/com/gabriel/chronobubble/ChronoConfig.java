@@ -131,6 +131,9 @@ public final class ChronoConfig {
     public static final ForgeConfigSpec.BooleanValue ZONE_OWN_PASS;
     public static final ForgeConfigSpec.BooleanValue ZONE_ORBS;
     public static final ForgeConfigSpec.DoubleValue ZONE_CAPTURE_REACH;
+    public static final ForgeConfigSpec.DoubleValue ZONE_DISSOLVE_SECONDS;
+    public static final ForgeConfigSpec.DoubleValue ZONE_DISSOLVE_MANA;
+    public static final ForgeConfigSpec.BooleanValue ZONE_DISSOLVE_ARROWS;
     public static final ForgeConfigSpec.BooleanValue PRECOG_ENABLED;
     public static final ForgeConfigSpec.BooleanValue PRECOG_REQUIRE_COMBAT;
     public static final ForgeConfigSpec.DoubleValue PRECOG_RANGE;
@@ -261,6 +264,9 @@ public final class ChronoConfig {
         ZONE_OWN_PASS = bool(s, "own_projectiles_pass", "true = os proj\u00e9teis do pr\u00f3prio dono atravessam a zona", true);
         ZONE_ORBS = bool(s, "projectile_orbs", "Desenhar um orbe do Chrono Stasis em cada proj\u00e9til parado pela zona", true);
         ZONE_CAPTURE_REACH = dbl(s, "capture_reach", "Alcance extra (blocos) para prever e parar proj\u00e9teis muito r\u00e1pidos", 6.0, 1.0, 32.0);
+        ZONE_DISSOLVE_SECONDS = dbl(s, "dissolve_seconds", "Como no anime: o proj\u00e9til parado pela zona tem o tempo acelerado e se desfaz depois de tantos segundos. 0 = fica parado at\u00e9 a zona desligar e depois volta a voar", 2.0, 0.0, 60.0);
+        ZONE_DISSOLVE_MANA = dbl(s, "dissolve_mana", "Mana gasta pelo dono da zona a cada proj\u00e9til desfeito (sem mana, o proj\u00e9til fica s\u00f3 parado)", 0.0, 0.0, 1000.0);
+        ZONE_DISSOLVE_ARROWS = bool(s, "dissolve_arrows", "true = flechas tamb\u00e9m se desfazem (n\u00e3o d\u00e1 para recolher). Tridentes nunca se desfazem: s\u00e3o itens de jogador", true);
         s.pop();
 
         section(s, "precognition", true, "Antever ataques: avisa proj\u00e9teis e mobs prestes a te atingir (usu\u00e1rios de Tempo)");

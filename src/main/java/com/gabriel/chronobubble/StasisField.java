@@ -3,7 +3,12 @@ package com.gabriel.chronobubble;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.projectile.AbstractArrowEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
+import net.minecraft.entity.projectile.TridentEntity;
+import net.minecraft.particles.ParticleTypes;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.potion.Effect;
 import net.minecraft.util.ResourceLocation;
@@ -38,6 +43,8 @@ public class StasisField {
     public static final Map<Integer, LivingEntity> FROZEN = new HashMap<>();
     /** Proj\u00e9teis segurados no momento, por id. */
     private static final Map<Integer, ProjectileEntity> HELD = new HashMap<>();
+    /** Quando cada proj\u00e9til foi parado (tempo do mundo), para desfaz\u00ea-lo depois (tempo acelerado). */
+    private static final Map<Integer, Long> HELD_AT = new HashMap<>();
 
     public static float radius(Entity e) {
         return Math.max(e.getBbHeight() * 0.62F, e.getBbWidth() * 0.9F) * ChronoConfig.f(ChronoConfig.SPHERE_SCALE);
@@ -45,12 +52,48 @@ public class StasisField {
 
     /** Dentro de alguma zona ligada (ChronoZone)? Proj\u00e9teis do pr\u00f3prio dono da zona n\u00e3o contam. */
     private static boolean insideAnyZone(ProjectileEntity p, World world) {
+        return zoneHolding(p, world) != null;
+    }
+
+    /** Dono da zona que est\u00e1 segurando o proj\u00e9til (o mais pr\u00f3ximo), ou null. */
+    private static PlayerEntity zoneHolding(ProjectileEntity p, World world) {
         double r = ChronoConfig.f(ChronoConfig.ZONE_RADIUS) + 0.1D;
+        PlayerEntity best = null;
+        double bestD = r * r;
         for (PlayerEntity o : ChronoZone.owners(world)) {
             if (ChronoConfig.ZONE_OWN_PASS.get() && p.getOwner() == o) continue;
-            if (p.distanceToSqr(o.getX(), o.getY() + o.getBbHeight() * 0.5D, o.getZ()) <= r * r) return true;
+            double d = p.distanceToSqr(o.getX(), o.getY() + o.getBbHeight() * 0.5D, o.getZ());
+            if (d <= bestD) { bestD = d; best = o; }
         }
-        return false;
+        return best;
+    }
+
+    /**
+     * Este proj\u00e9til se desfaz quando a zona acelera o tempo dele? Tridentes nunca (s\u00e3o itens de jogador); flechas
+     * comuns conforme a config. Usado tamb\u00e9m pelo cliente, para a anima\u00e7\u00e3o de acelera\u00e7\u00e3o.
+     */
+    public static boolean dissolves(Entity p) {
+        if (ChronoConfig.ZONE_DISSOLVE_SECONDS.get() <= 0.0D) return false;
+        if (p instanceof TridentEntity) return false;
+        return !(p instanceof AbstractArrowEntity) || ChronoConfig.ZONE_DISSOLVE_ARROWS.get();
+    }
+
+    /** Ticks at\u00e9 o proj\u00e9til parado se desfazer. */
+    public static int dissolveTicks() {
+        return (int) Math.round(ChronoConfig.ZONE_DISSOLVE_SECONDS.get() * 20.0D);
+    }
+
+    /** Tempo acelerado at\u00e9 o fim: o proj\u00e9til vira part\u00edculas e some (sem dano e sem item). */
+    private static void dissolve(ProjectileEntity p) {
+        if (p.level instanceof ServerWorld) {
+            ServerWorld w = (ServerWorld) p.level;
+            double y = p.getY() + p.getBbHeight() * 0.5D;
+            w.sendParticles(ParticleTypes.END_ROD, p.getX(), y, p.getZ(), 10, 0.15D, 0.15D, 0.15D, 0.06D);
+            w.sendParticles(ParticleTypes.REVERSE_PORTAL, p.getX(), y, p.getZ(), 14, 0.2D, 0.2D, 0.2D, 0.04D);
+            w.sendParticles(ParticleTypes.CLOUD, p.getX(), y, p.getZ(), 4, 0.1D, 0.1D, 0.1D, 0.01D);
+        }
+        p.level.playSound(null, p.getX(), p.getY(), p.getZ(), ChronoBubbleMod.TIME_DISSOLVE.get(), SoundCategory.PLAYERS, 0.8F, 1.0F);
+        p.remove();
     }
 
     /**
@@ -84,6 +127,7 @@ public class StasisField {
         p.setDeltaMovement(Vector3d.ZERO);
         p.hurtMarked = true;
         HELD.put(p.getId(), p);
+        HELD_AT.put(p.getId(), p.level.getGameTime());
         sendOrb(p, true);
     }
 
@@ -146,16 +190,34 @@ public class StasisField {
         Iterator<ProjectileEntity> it = HELD.values().iterator();
         while (it.hasNext()) {
             ProjectileEntity p = it.next();
-            if (!p.isAlive()) { it.remove(); continue; }
+            if (!p.isAlive()) { it.remove(); HELD_AT.remove(p.getId()); continue; }
             if (p.level != world) continue;
-            if (insideAnyZone(p, world)) {
+            PlayerEntity owner = zoneHolding(p, world);
+            if (owner != null) {
                 p.setDeltaMovement(Vector3d.ZERO);
                 p.hurtMarked = true;
+                Long since = HELD_AT.get(p.getId());
+                if (since != null && dissolves(p) && world.getGameTime() - since >= dissolveTicks() && payDissolve(owner)) {
+                    it.remove();
+                    HELD_AT.remove(p.getId());
+                    dissolve(p);
+                }
             } else {
                 release(p);
                 it.remove();
+                HELD_AT.remove(p.getId());
             }
         }
+    }
+
+    /** Cobra a mana do dono da zona para desfazer um proj\u00e9til. Sem mana, o proj\u00e9til s\u00f3 continua parado. */
+    private static boolean payDissolve(PlayerEntity owner) {
+        float cost = ChronoConfig.f(ChronoConfig.ZONE_DISSOLVE_MANA);
+        if (cost <= 0.0F) return true;
+        if (BlockCloverBridge.getMana(owner) < cost) return false;
+        BlockCloverBridge.spend(owner, cost, 0, 0);
+        BlockCloverBridge.syncToClient(owner);
+        return true;
     }
 
     /** Seguran\u00e7a: proj\u00e9til marcado que volta ao mundo (jogo foi reaberto) \u00e9 solto. */
