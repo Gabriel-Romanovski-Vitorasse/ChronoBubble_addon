@@ -2,6 +2,12 @@ package com.gabriel.chronobubble;
 
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.potion.Effect;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.registries.ForgeRegistries;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -14,8 +20,36 @@ import java.util.List;
  * Se algo mudar nas classes do mod, as chamadas falham em sil\u00eancio e o recurso correspondente n\u00e3o faz nada.
  */
 public class BlockCloverBridge {
+    private static final Logger LOGGER = LogManager.getLogger();
+
+    public static final String MOD_ID = "block_clover";
     public static final String KEY_STASIS = "stasis";
     public static final String KEY_GRIGORA = "grigora";
+
+    // ---- Nomes do Block Clover usados pelo addon (todos aqui, para achar f\u00e1cil quando o mod mudar) ----
+    /** Efeito de po\u00e7\u00e3o do Chrono Stasis (usado tamb\u00e9m pelo Grigora). */
+    public static final ResourceLocation STASIS_EFFECT_ID = new ResourceLocation(MOD_ID, "chrono_stasis");
+    /** Tipo de part\u00edcula das magias de tempo. */
+    public static final ResourceLocation TIME_PARTICLE_ID = new ResourceLocation(MOD_ID, "time");
+    private static final String PKG = "com.yuanno.block_clover.";
+    public static final String CLS_STASIS = PKG + "spells.time.ChronoStasisAbility";
+    public static final String CLS_GRIGORA = PKG + "spells.time.ChronoStasisGrigoraAbility";
+    public static final String CLS_STEAL = PKG + "spells.time.TimeStealAbility";
+    public static final String CLS_HOP = PKG + "spells.time.TimeHopAbility";
+    public static final String CLS_ABILITY_USE_EVENT = PKG + "api.ability.AbilityUseEvent";
+
+    private static Effect stasisEffect;
+
+    /** O efeito Chrono Stasis, ou null se o Block Clover n\u00e3o estiver carregado. */
+    public static Effect stasisEffect() {
+        if (stasisEffect == null) stasisEffect = ForgeRegistries.POTIONS.getValue(STASIS_EFFECT_ID);
+        return stasisEffect;
+    }
+
+    /** \u00c9 o efeito Chrono Stasis? */
+    public static boolean isStasis(Effect effect) {
+        return effect != null && STASIS_EFFECT_ID.equals(effect.getRegistryName());
+    }
 
     private static boolean tried;
     private static boolean statsOk;
@@ -26,6 +60,10 @@ public class BlockCloverBridge {
     private static Method getMana, alterMana, alterTime, alterExperience;
     private static Method abilityGet, hasUnlocked, remUnlocked, remEquipped, addUnlocked;
     private static Method sendTo;
+    private static Method getEquipped;
+    private static Object categoryAll;
+    private static Class<?> stealClass;
+    private static Method stealIsContinuous;
     private static Constructor<?> statsPacket, abilityPacket;
     private static Object coreStasis, coreGrigora;
 
@@ -33,8 +71,8 @@ public class BlockCloverBridge {
         if (tried) return;
         tried = true;
         try {
-            Class<?> capStats = Class.forName("com.yuanno.block_clover.data.entity.EntityStatsCapability");
-            Class<?> stats = Class.forName("com.yuanno.block_clover.data.entity.IEntityStats");
+            Class<?> capStats = Class.forName(PKG + "data.entity.EntityStatsCapability");
+            Class<?> stats = Class.forName(PKG + "data.entity.IEntityStats");
             statsGet = capStats.getMethod("get", LivingEntity.class);
             getAttribute = stats.getMethod("getAttribute");
             getSecondAttribute = stats.getMethod("getSecondAttribute");
@@ -49,23 +87,32 @@ public class BlockCloverBridge {
             statsOk = true;
 
             try {
-                Class<?> capAbility = Class.forName("com.yuanno.block_clover.data.ability.AbilityDataCapability");
-                Class<?> data = Class.forName("com.yuanno.block_clover.data.ability.IAbilityData");
-                Class<?> core = Class.forName("com.yuanno.block_clover.api.ability.AbilityCore");
+                Class<?> capAbility = Class.forName(PKG + "data.ability.AbilityDataCapability");
+                Class<?> data = Class.forName(PKG + "data.ability.IAbilityData");
+                Class<?> core = Class.forName(PKG + "api.ability.AbilityCore");
                 abilityGet = capAbility.getMethod("get", LivingEntity.class);
                 hasUnlocked = data.getMethod("hasUnlockedAbility", core);
                 remUnlocked = data.getMethod("removeUnlockedAbility", core);
                 remEquipped = data.getMethod("removeEquippedAbility", core);
                 addUnlocked = data.getMethod("addUnlockedAbility", PlayerEntity.class, core);
-                coreStasis = Class.forName("com.yuanno.block_clover.spells.time.ChronoStasisAbility").getField("INSTANCE").get(null);
-                coreGrigora = Class.forName("com.yuanno.block_clover.spells.time.ChronoStasisGrigoraAbility").getField("INSTANCE").get(null);
+                coreStasis = Class.forName(CLS_STASIS).getField("INSTANCE").get(null);
+                coreGrigora = Class.forName(CLS_GRIGORA).getField("INSTANCE").get(null);
                 abilitiesOk = true;
+                try {
+                    Class<?> catClass = Class.forName(PKG + "api.ability.AbilityCategories$AbilityCategory");
+                    categoryAll = catClass.getField("ALL").get(null);
+                    getEquipped = data.getMethod("getEquippedAbilities", catClass);
+                    stealClass = Class.forName(CLS_STEAL);
+                    stealIsContinuous = stealClass.getMethod("isContinuous");
+                } catch (Throwable ignored) {
+                    // sem o Time Steal: o ganho fixo do soco simplesmente n\u00e3o age
+                }
 
-                Class<?> ph = Class.forName("com.yuanno.block_clover.networking.PacketHandler");
+                Class<?> ph = Class.forName(PKG + "networking.PacketHandler");
                 sendTo = ph.getMethod("sendTo", Object.class, PlayerEntity.class);
-                statsPacket = Class.forName("com.yuanno.block_clover.networking.server.SSyncEntityStatsPacket")
+                statsPacket = Class.forName(PKG + "networking.server.SSyncEntityStatsPacket")
                         .getConstructor(int.class, stats);
-                abilityPacket = Class.forName("com.yuanno.block_clover.networking.server.SSyncAbilityDataPacket")
+                abilityPacket = Class.forName(PKG + "networking.server.SSyncAbilityDataPacket")
                         .getConstructor(int.class, data);
                 syncOk = true;
             } catch (Throwable ignored) {
@@ -74,6 +121,12 @@ public class BlockCloverBridge {
         } catch (Throwable t) {
             statsOk = false;
         }
+    }
+
+    /** As estat\u00edsticas do Block Clover (Time, mana, atributo) foram encontradas. */
+    public static boolean isAvailable() {
+        init();
+        return statsOk;
     }
 
     private static Object stats(LivingEntity e) throws Exception {
@@ -98,25 +151,43 @@ public class BlockCloverBridge {
     /** O jogador est\u00e1 com o soco do Time Steal armado (habilidade equipada e "ativa", antes de acertar). */
     public static boolean isStealPunchActive(PlayerEntity player) {
         init();
-        if (!abilitiesOk) return false;
+        if (!abilitiesOk || stealIsContinuous == null) return false;
         try {
             Object data = abilityGet.invoke(null, player);
             if (data == null) return false;
-            Class<?> dataIface = Class.forName("com.yuanno.block_clover.data.ability.IAbilityData");
-            Class<?> catClass = Class.forName("com.yuanno.block_clover.api.ability.AbilityCategories$AbilityCategory");
-            Object all = catClass.getField("ALL").get(null);
-            Object[] equipped = (Object[]) dataIface.getMethod("getEquippedAbilities", catClass).invoke(data, all);
+            Object[] equipped = (Object[]) getEquipped.invoke(data, categoryAll);
             if (equipped == null) return false;
             for (Object ab : equipped) {
-                if (ab == null) continue;
-                if (!ab.getClass().getName().equals("com.yuanno.block_clover.spells.time.TimeStealAbility")) continue;
-                Object active = ab.getClass().getMethod("isContinuous").invoke(ab);
+                if (ab == null || !stealClass.isInstance(ab)) continue;
+                Object active = stealIsContinuous.invoke(ab);
                 if (active instanceof Boolean && (Boolean) active) return true;
             }
         } catch (Throwable t) {
             // sem como saber: n\u00e3o interfere
         }
         return false;
+    }
+
+    /**
+     * Escreve no log o que foi encontrado no Block Clover. Se o mod mudar numa atualiza\u00e7\u00e3o, \u00e9 aqui que aparece
+     * o que parou de funcionar (antes as falhas eram silenciosas).
+     */
+    public static void logStatus() {
+        if (!ModList.get().isLoaded(MOD_ID)) {
+            LOGGER.warn("[ChronoBubble] Block Clover nao esta instalado: so a parte visual do addon vai funcionar.");
+            return;
+        }
+        init();
+        LOGGER.info("[ChronoBubble] Block Clover: estatisticas {}, habilidades {}, sincronizacao {}, Time Steal {}",
+                ok(statsOk), ok(abilitiesOk), ok(syncOk), ok(stealIsContinuous != null));
+        if (!statsOk || !abilitiesOk || !syncOk || stealIsContinuous == null) {
+            LOGGER.warn("[ChronoBubble] Parte do Block Clover nao foi encontrada (versao diferente?). "
+                    + "Os recursos que dependem dela ficam desligados.");
+        }
+    }
+
+    private static String ok(boolean b) {
+        return b ? "OK" : "FALHOU";
     }
 
     /** O jogador tem o Chrono Stasis liberado (some quando ele est\u00e1 "renascido"). */

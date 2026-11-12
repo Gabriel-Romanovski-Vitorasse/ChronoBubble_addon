@@ -1,0 +1,14 @@
+{
+  "parent": "chrono_bubble:root",
+  "display": {
+    "icon": { "item": "chrono_bubble:swallowtail" },
+    "title": { "translate": "advancements.chrono_bubble.full_swallowtail.title" },
+    "description": { "translate": "advancements.chrono_bubble.full_swallowtail.description" },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "filled": { "trigger": "minecraft:impossible" }
+  }
+}

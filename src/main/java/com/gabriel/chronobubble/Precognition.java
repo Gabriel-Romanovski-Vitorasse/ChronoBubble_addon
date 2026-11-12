@@ -25,17 +25,6 @@ import java.util.UUID;
  */
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class Precognition {
-    // ===== Ajustes f\u00e1ceis (o .toml tem prioridade) =====
-    public static boolean ENABLED = true;
-    /** S\u00f3 funciona com a combat bar ativa. */
-    public static boolean REQUIRE_COMBAT = true;
-    /** Alcance de busca (blocos). */
-    public static double RANGE = 24.0D;
-    /** Quantos ticks \u00e0 frente prever (20 = 1 segundo). */
-    public static int HORIZON_TICKS = 30;
-    /** Avisar tamb\u00e9m de mobs prestes a atacar de perto. */
-    public static boolean WARN_MOBS = true;
-
     private static final double HIT_RADIUS = 1.2D;
     private static final int MAX_THREATS = 10;
     private static final Set<UUID> WAS_ACTIVE = new HashSet<>();
@@ -59,8 +48,8 @@ public class Precognition {
 
         List<Integer> ids = new ArrayList<>();
         List<Byte> kinds = new ArrayList<>();
-        if (ENABLED && player.isAlive() && BlockCloverBridge.isTimeUser(player)
-                && (!REQUIRE_COMBAT || BlockCloverBridge.isInCombat(player))) {
+        if (ChronoConfig.PRECOG_ENABLED.get() && player.isAlive() && BlockCloverBridge.isTimeUser(player)
+                && (!ChronoConfig.PRECOG_REQUIRE_COMBAT.get() || BlockCloverBridge.isInCombat(player))) {
             scan(player, ids, kinds);
         }
 
@@ -80,14 +69,14 @@ public class Precognition {
 
     private static void scan(ServerPlayerEntity player, List<Integer> ids, List<Byte> kinds) {
         Vector3d center = new Vector3d(player.getX(), player.getY() + player.getBbHeight() * 0.5D, player.getZ());
-        net.minecraft.util.math.AxisAlignedBB box = player.getBoundingBox().inflate(RANGE);
+        net.minecraft.util.math.AxisAlignedBB box = player.getBoundingBox().inflate(ChronoConfig.PRECOG_RANGE.get());
 
         for (ProjectileEntity p : player.level.getEntitiesOfClass(ProjectileEntity.class, box)) {
             if (ids.size() >= MAX_THREATS) return;
             if (p.getOwner() == player || p instanceof StasisOrbEntity) continue;
             Vector3d m = p.getDeltaMovement();
             if (m.lengthSqr() < 0.04D) continue;                     // parado / cravado / segurado pela zona
-            for (int t = 1; t <= HORIZON_TICKS; t++) {
+            for (int t = 1; t <= ChronoConfig.PRECOG_HORIZON.get(); t++) {
                 Vector3d at = predict(p.position(), m, p.isNoGravity(), t);
                 if (at.distanceToSqr(center) <= HIT_RADIUS * HIT_RADIUS) {
                     ids.add(p.getId());
@@ -97,7 +86,7 @@ public class Precognition {
             }
         }
 
-        if (!WARN_MOBS) return;
+        if (!ChronoConfig.PRECOG_MOBS.get()) return;
         for (MobEntity m : player.level.getEntitiesOfClass(MobEntity.class, player.getBoundingBox().inflate(6.0D))) {
             if (ids.size() >= MAX_THREATS) return;
             if (m.getTarget() == player && m.distanceToSqr(player) < 4.5D * 4.5D) {

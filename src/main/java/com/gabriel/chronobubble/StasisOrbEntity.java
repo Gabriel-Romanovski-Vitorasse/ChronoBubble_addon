@@ -4,6 +4,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.projectile.ThrowableEntity;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.IPacket;
 import net.minecraft.potion.Effect;
 import net.minecraft.potion.EffectInstance;
@@ -16,10 +17,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 /** Esfera de Chrono Stasis arremessada: congela um \u00fanico alvo vivo que ela acertar. */
 public class StasisOrbEntity extends ThrowableEntity {
-    /** Dura\u00e7\u00e3o do congelamento, igual \u00e0 do soco original (100 ticks = 5 s). */
-    public static int FREEZE_TICKS = 100;
     private static final int MAX_LIFE_TICKS = 80;
-    private static final ResourceLocation EFFECT_ID = new ResourceLocation("block_clover", "chrono_stasis");
 
     /** S\u00f3 no servidor: esfera lan\u00e7ada com o rel\u00f3gio na m\u00e3o (congelamento sustentado). */
     public boolean sustained;
@@ -36,6 +34,21 @@ public class StasisOrbEntity extends ThrowableEntity {
 
     @Override
     protected void defineSynchedData() {
+    }
+
+    /** Guarda o tipo da esfera no save (sen\u00e3o, ao recarregar o mundo, ela voltava como esfera comum). */
+    @Override
+    protected void addAdditionalSaveData(CompoundNBT tag) {
+        super.addAdditionalSaveData(tag);
+        tag.putBoolean("Sustained", sustained);
+        tag.putBoolean("Steal", steal);
+    }
+
+    @Override
+    protected void readAdditionalSaveData(CompoundNBT tag) {
+        super.readAdditionalSaveData(tag);
+        sustained = tag.getBoolean("Sustained");
+        steal = tag.getBoolean("Steal");
     }
 
     @Override
@@ -55,7 +68,7 @@ public class StasisOrbEntity extends ThrowableEntity {
         if (level.isClientSide) return;
         Entity hit = result.getEntity();
         if (!(hit instanceof LivingEntity) || hit == getOwner()) return;
-        Effect effect = ForgeRegistries.POTIONS.getValue(EFFECT_ID);
+        Effect effect = BlockCloverBridge.stasisEffect();
         if (effect == null) return;
         LivingEntity target = (LivingEntity) hit;
         if (steal && getOwner() instanceof net.minecraft.entity.player.ServerPlayerEntity) {
@@ -67,7 +80,7 @@ public class StasisOrbEntity extends ThrowableEntity {
             return;
         }
         if (!target.hasEffect(effect)) {
-            target.addEffect(new EffectInstance(effect, FREEZE_TICKS));
+            target.addEffect(new EffectInstance(effect, (int) Math.round(ChronoConfig.THROW_FREEZE_SECONDS.get() * 20.0D)));
         }
     }
 

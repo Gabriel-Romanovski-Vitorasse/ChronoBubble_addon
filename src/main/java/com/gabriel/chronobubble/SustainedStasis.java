@@ -45,27 +45,6 @@ import java.util.UUID;
  */
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class SustainedStasis {
-    // ===== Ajustes f\u00e1ceis (o .toml tem prioridade) =====
-    public static boolean ENABLED = true;
-    /** Quantos alvos podem ficar presos ao mesmo tempo com a esfera (o mais antigo \u00e9 solto ao passar disso). */
-    public static int MAX_TARGETS = 3;
-    /** Mana gasta por segundo PARA CADA alvo mantido parado (esfera). */
-    public static float MANA_PER_SECOND = 4.0F;
-    /** Quantos segundos de mana restantes disparam o aviso de "tempo inst\u00e1vel". */
-    public static float WARN_SECONDS = 3.0F;
-    /** Guarda o dano recebido pelos alvos presos e aplica ao solt\u00e1-los. */
-    public static boolean ACCUMULATE_DAMAGE = true;
-    public static float DAMAGE_MULTIPLIER = 1.0F;
-
-    // --- Grigora sustentado ---
-    public static boolean GRIGORA_ENABLED = true;
-    public static float GRIGORA_RADIUS = 16.0F;
-    public static int GRIGORA_MAX_TARGETS = 10;
-    public static float GRIGORA_MANA_PER_SECOND = 1.5F;
-    public static int GRIGORA_TIME_COST = 50;
-    public static int GRIGORA_COOLDOWN_TICKS = 200;
-    public static boolean GRIGORA_SKIP_BOSSES = true;
-
     /** Jogadores que est\u00e3o segurando a tecla modificadora (Alt por padr\u00e3o; o cliente avisa o servidor). */
     private static final Set<UUID> HELD = new HashSet<>();
 
@@ -80,15 +59,15 @@ public class SustainedStasis {
 
     private static final int FREEZE_TICKS = 1_000_000;   // "para sempre": quem encerra somos n\u00f3s
     private static final String TAG = "chrono_bubble_sustained";
-    private static final ResourceLocation EFFECT_ID = new ResourceLocation("block_clover", "chrono_stasis");
 
     private static final class Session {
         final List<LivingEntity> targets = new ArrayList<>();
         final float cost;      // mana por segundo por alvo
         final int max;         // m\u00e1ximo de alvos
+        final boolean area;    // true = Grigora (\u00e1rea); false = esfera arremessada
         int ticks;
         boolean unstable;
-        Session(float cost, int max) { this.cost = cost; this.max = max; }
+        Session(float cost, int max, boolean area) { this.cost = cost; this.max = max; this.area = area; }
     }
 
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
@@ -99,7 +78,7 @@ public class SustainedStasis {
     private static boolean releasing;
 
     private static Effect effect() {
-        return ForgeRegistries.POTIONS.getValue(EFFECT_ID);
+        return BlockCloverBridge.stasisEffect();
     }
 
     private static void sendUnstable(LivingEntity target, boolean unstable) {
@@ -119,11 +98,21 @@ public class SustainedStasis {
         if (s.unstable) sendUnstable(target, true);
     }
 
+    /** Quantos alvos o jogador mant\u00e9m presos agora. */
+    public static int targetCount(PlayerEntity p) {
+        Session s = SESSIONS.get(p.getUUID());
+        return s == null ? 0 : s.targets.size();
+    }
+
     /** Prende {@code target} com a esfera (soma aos alvos que o jogador j\u00e1 mant\u00e9m). */
     public static void begin(ServerPlayerEntity caster, LivingEntity target) {
         Effect effect = effect();
-        if (!ENABLED || effect == null || target == caster) return;
-        Session s = SESSIONS.computeIfAbsent(caster.getUUID(), k -> new Session(MANA_PER_SECOND, MAX_TARGETS));
+        if (!ChronoConfig.SUSTAIN_ENABLED.get() || effect == null || target == caster) return;
+        // Uma sess\u00e3o do Grigora tem outro custo e outro limite: a esfera n\u00e3o entra nela, substitui (solta os do Grigora).
+        Session old = SESSIONS.get(caster.getUUID());
+        if (old != null && old.area) end(caster.getUUID(), null, null);
+        Session s = SESSIONS.computeIfAbsent(caster.getUUID(), k -> new Session(
+                ChronoConfig.f(ChronoConfig.SUSTAIN_MANA_PER_SECOND), ChronoConfig.SUSTAIN_MAX_TARGETS.get(), false));
         addTarget(s, caster, target, effect);
         Msg.bar(caster, TextFormatting.AQUA, "sustain_on", s.targets.size(), s.max, Msg.f1(s.cost * s.targets.size()));
     }
@@ -131,38 +120,38 @@ public class SustainedStasis {
     /** Alt + Grigora: prende todos em volta. Chamado no lugar do Grigora original (que \u00e9 cancelado). */
     public static void beginArea(ServerPlayerEntity caster) {
         Effect effect = effect();
-        if (!GRIGORA_ENABLED || effect == null) return;
+        if (!ChronoConfig.GRIGORA_ENABLED.get() || effect == null) return;
         long now = caster.level.getGameTime();
         Long ready = GRIGORA_READY.get(caster.getUUID());
         if (ready != null && now < ready) {
             Msg.bar(caster, TextFormatting.GRAY, "grigora_cooldown", Msg.f1((ready - now) / 20.0));
             return;
         }
-        if (!(BlockCloverBridge.getTime(caster) > GRIGORA_TIME_COST)) {
+        if (!(BlockCloverBridge.getTime(caster) > ChronoConfig.GRIGORA_TIME_COST.get())) {
             Msg.bar(caster, TextFormatting.RED, "no_time");
             return;
         }
-        final double r = GRIGORA_RADIUS;
+        final double r = ChronoConfig.f(ChronoConfig.GRIGORA_RADIUS);
         List<LivingEntity> found = caster.level.getEntitiesOfClass(LivingEntity.class, caster.getBoundingBox().inflate(r),
                 e -> e != caster && e.isAlive() && e.distanceToSqr(caster) <= r * r
-                        && !(GRIGORA_SKIP_BOSSES && (e instanceof EnderDragonEntity || e instanceof WitherEntity)));
+                        && !(ChronoConfig.GRIGORA_SKIP_BOSSES.get() && (e instanceof EnderDragonEntity || e instanceof WitherEntity)));
         if (found.isEmpty()) {
             Msg.bar(caster, TextFormatting.GRAY, "nobody_near");
             return;
         }
         found.sort(Comparator.comparingDouble(e -> e.distanceToSqr(caster)));
-        if (found.size() > GRIGORA_MAX_TARGETS) found = new ArrayList<>(found.subList(0, GRIGORA_MAX_TARGETS));
-        if (!(BlockCloverBridge.getMana(caster) >= GRIGORA_MANA_PER_SECOND * found.size())) {
+        if (found.size() > ChronoConfig.GRIGORA_MAX_TARGETS.get()) found = new ArrayList<>(found.subList(0, ChronoConfig.GRIGORA_MAX_TARGETS.get()));
+        if (!(BlockCloverBridge.getMana(caster) >= ChronoConfig.f(ChronoConfig.GRIGORA_MANA_PER_SECOND) * found.size())) {
             Msg.bar(caster, TextFormatting.RED, "no_mana");
             return;
         }
 
         end(caster.getUUID(), null, null);
-        BlockCloverBridge.spend(caster, 0.0F, GRIGORA_TIME_COST, 0);
+        BlockCloverBridge.spend(caster, 0.0F, ChronoConfig.GRIGORA_TIME_COST.get(), 0);
         BlockCloverBridge.syncToClient(caster);
-        GRIGORA_READY.put(caster.getUUID(), now + GRIGORA_COOLDOWN_TICKS);
+        GRIGORA_READY.put(caster.getUUID(), now + ChronoConfig.GRIGORA_COOLDOWN_TICKS.get());
 
-        Session s = new Session(GRIGORA_MANA_PER_SECOND, GRIGORA_MAX_TARGETS);
+        Session s = new Session(ChronoConfig.f(ChronoConfig.GRIGORA_MANA_PER_SECOND), ChronoConfig.GRIGORA_MAX_TARGETS.get(), true);
         SESSIONS.put(caster.getUUID(), s);
         for (LivingEntity t : found) addTarget(s, caster, t, effect);
         caster.level.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
@@ -225,12 +214,12 @@ public class SustainedStasis {
     /** O alvo preso n\u00e3o sofre na hora: o dano fica guardado. */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onAttack(LivingAttackEvent event) {
-        if (!ACCUMULATE_DAMAGE || releasing) return;
+        if (!ChronoConfig.SUSTAIN_ACCUM.get() || releasing) return;
         LivingEntity target = event.getEntityLiving();
         if (target.level.isClientSide || !OWNER.containsKey(target.getUUID())) return;
         DamageSource src = event.getSource();
         if (src.isBypassInvul()) return;                              // vazio / /kill passam normalmente
-        float amount = event.getAmount() * DAMAGE_MULTIPLIER;
+        float amount = event.getAmount() * ChronoConfig.f(ChronoConfig.SUSTAIN_DMG_MULT);
         if (amount <= 0.0F) return;
         event.setCanceled(true);
         float total = ACCUM.merge(target.getUUID(), amount, Float::sum);
@@ -265,17 +254,15 @@ public class SustainedStasis {
         float rate = s.cost * s.targets.size();
         s.ticks++;
         if (s.ticks % 20 == 0) {
-            if (BlockCloverBridge.getMana(player) < rate) {
+            if (!ManaDrainAbility.chargeSecond(player, rate)) {
                 end(player.getUUID(), TextFormatting.RED, "sustain_no_mana");
                 return;
             }
-            BlockCloverBridge.spend(player, rate, 0, 0);
-            if (player instanceof ServerPlayerEntity) BlockCloverBridge.syncToClient(player);
         }
 
         if (s.ticks % 5 == 0) {
             float seconds = BlockCloverBridge.getMana(player) / Math.max(0.01F, rate);
-            boolean unstable = seconds <= WARN_SECONDS;
+            boolean unstable = seconds <= ChronoConfig.f(ChronoConfig.SUSTAIN_WARN_SECONDS);
             if (unstable != s.unstable) {
                 s.unstable = unstable;
                 for (LivingEntity t : s.targets) sendUnstable(t, unstable);
@@ -305,6 +292,21 @@ public class SustainedStasis {
         for (UUID id : new ArrayList<>(SESSIONS.keySet())) end(id, null, null);
         ACCUM.clear();
         OWNER.clear();
+    }
+
+    /** Quem passa a ver um alvo preso enquanto o tempo est\u00e1 inst\u00e1vel tamb\u00e9m v\u00ea a esfera piscando. */
+    @SubscribeEvent
+    public static void onStartTracking(PlayerEvent.StartTracking event) {
+        if (!(event.getTarget() instanceof LivingEntity) || !(event.getPlayer() instanceof ServerPlayerEntity)) return;
+        LivingEntity target = (LivingEntity) event.getTarget();
+        if (!OWNER.containsKey(target.getUUID())) return;
+        for (Session s : SESSIONS.values()) {
+            if (s.unstable && s.targets.contains(target)) {
+                ChronoBubbleMod.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity) event.getPlayer()),
+                        new UnstablePacket(target.getId(), true));
+                return;
+            }
+        }
     }
 
     /** Seguran\u00e7a: um mob marcado que volta ao mundo sem sess\u00e3o (jogo fechado/chunk descarregado) \u00e9 solto. */

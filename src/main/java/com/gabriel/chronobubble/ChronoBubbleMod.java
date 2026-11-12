@@ -6,7 +6,10 @@ import net.minecraft.item.Item;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
 import net.minecraftforge.fml.RegistryObject;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.network.simple.SimpleChannel;
@@ -17,11 +20,16 @@ import net.minecraftforge.registries.ForgeRegistries;
 @Mod(ChronoBubbleMod.MODID)
 public class ChronoBubbleMod {
     public static final String MODID = "chrono_bubble";
-    private static final String PROTOCOL = "1";
+    /**
+     * Vers\u00e3o do protocolo de rede. Suba o n\u00famero sempre que um pacote mudar de formato.
+     * Cliente e servidor precisam ter o addon na MESMA vers\u00e3o: quem n\u00e3o tiver (ou tiver outra) \u00e9 recusado ao
+     * entrar, com uma mensagem clara, em vez de entrar e receber pacotes que n\u00e3o entende.
+     */
+    private static final String PROTOCOL = "2";
 
     /** Canal usado para o servidor avisar os clientes de quem est\u00e1 congelado. */
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(MODID, "main"), () -> PROTOCOL, v -> true, v -> true);
+            new ResourceLocation(MODID, "main"), () -> PROTOCOL, PROTOCOL::equals, PROTOCOL::equals);
 
     public static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, MODID);
     public static final RegistryObject<SoundEvent> STASIS_START = SOUNDS.register("stasis_start",
@@ -38,7 +46,9 @@ public class ChronoBubbleMod {
     public static final RegistryObject<Item> SWALLOWTAIL = ITEMS.register("swallowtail", SwallowtailItem::new);
 
     public ChronoBubbleMod() {
-        net.minecraftforge.fml.ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON, ChronoConfig.SPEC, "chrono_bubble-common.toml");
+        ChronoConfig.register();
+        FMLJavaModLoadingContext.get().getModEventBus().addListener((FMLCommonSetupEvent e) -> BlockCloverBridge.logStatus());
+        MinecraftForge.EVENT_BUS.addListener((RegisterCommandsEvent e) -> ChronoCommand.register(e.getDispatcher()));
         SOUNDS.register(FMLJavaModLoadingContext.get().getModEventBus());
         ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
         ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
@@ -54,5 +64,7 @@ public class ChronoBubbleMod {
         CHANNEL.registerMessage(9, AccelTogglePacket.class, AccelTogglePacket::encode, AccelTogglePacket::decode, AccelTogglePacket::handle);
         CHANNEL.registerMessage(10, HopGhostPacket.class, HopGhostPacket::encode, HopGhostPacket::decode, HopGhostPacket::handle);
         ChronoThrowHandler.register();
+        MinecraftForge.EVENT_BUS.register(ChronoZone.INSTANCE);         // habilidades com mana por segundo
+        MinecraftForge.EVENT_BUS.register(TimeAcceleration.INSTANCE);
     }
 }

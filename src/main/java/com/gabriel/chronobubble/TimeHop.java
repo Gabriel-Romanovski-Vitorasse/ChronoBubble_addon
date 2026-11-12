@@ -16,7 +16,7 @@ import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.RayTraceContext;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -40,23 +40,6 @@ import java.util.UUID;
  */
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TimeHop {
-    // ===== Ajustes f\u00e1ceis (o .toml e a tela de configura\u00e7\u00e3o t\u00eam prioridade) =====
-    public static boolean ENABLED = true;
-    public static float MANA_COST = 20.0F;
-    public static int TIME_COST = 20;
-    /** Dist\u00e2ncia m\u00e1xima do salto, em blocos (normal e agachado). */
-    public static float DISTANCE = 8.0F;
-    public static float DISTANCE_SNEAK = 20.0F;
-    /** Quantos ticks dura o deslize at\u00e9 o destino. */
-    public static int DASH_TICKS = 6;
-    /** Quanto tempo o tempo continua parado depois que voc\u00ea chega. */
-    public static int LINGER_TICKS = 14;
-    public static int COOLDOWN_TICKS = 40;
-    public static boolean FREEZE_ENEMIES = true;
-    public static boolean FREEZE_PLAYERS = false;
-    public static boolean SKIP_BOSSES = true;
-
-    private static final ResourceLocation EFFECT_ID = new ResourceLocation("block_clover", "chrono_stasis");
     private static final String TAG_SUSTAINED = "chrono_bubble_sustained";
 
     private static final class Hop {
@@ -75,27 +58,26 @@ public class TimeHop {
 
     /** Chamado no lugar do Time Hop original (que \u00e9 cancelado). */
     public static void start(ServerPlayerEntity player) {
-        if (!ENABLED || ACTIVE.containsKey(player.getUUID())) return;
+        if (!ChronoConfig.REHOP_ENABLED.get() || ACTIVE.containsKey(player.getUUID())) return;
         long now = player.level.getGameTime();
         Long ready = READY_AT.get(player.getUUID());
         if (ready != null && now < ready) {
-            player.displayClientMessage(new StringTextComponent("\u00a77Time Hop em recarga: "
-                    + String.format("%.1fs", (ready - now) / 20.0)), true);
+            Msg.bar(player, TextFormatting.GRAY, "hop_cooldown", Msg.f1((ready - now) / 20.0));
             return;
         }
-        if (!(BlockCloverBridge.getMana(player) >= MANA_COST) || !(BlockCloverBridge.getTime(player) > TIME_COST)) {
-            player.displayClientMessage(new StringTextComponent("\u00a7cMana ou Time insuficiente."), true);
+        if (!(BlockCloverBridge.getMana(player) >= ChronoConfig.f(ChronoConfig.REHOP_MANA_COST)) || !(BlockCloverBridge.getTime(player) > ChronoConfig.REHOP_TIME_COST.get())) {
+            Msg.bar(player, TextFormatting.RED, "no_mana_or_time");
             return;
         }
         Vector3d dest = findDestination(player);
         if (dest == null) {
-            player.displayClientMessage(new StringTextComponent("\u00a77Sem espa\u00e7o para saltar nessa dire\u00e7\u00e3o."), true);
+            Msg.bar(player, TextFormatting.GRAY, "hop_no_space");
             return;
         }
 
-        BlockCloverBridge.spend(player, MANA_COST, TIME_COST, 0);
+        BlockCloverBridge.spend(player, ChronoConfig.f(ChronoConfig.REHOP_MANA_COST), ChronoConfig.REHOP_TIME_COST.get(), 0);
         BlockCloverBridge.syncToClient(player);
-        READY_AT.put(player.getUUID(), now + COOLDOWN_TICKS + DASH_TICKS + LINGER_TICKS);
+        READY_AT.put(player.getUUID(), now + ChronoConfig.REHOP_COOLDOWN_TICKS.get() + ChronoConfig.REHOP_DASH_TICKS.get() + ChronoConfig.REHOP_LINGER_TICKS.get());
 
         Hop hop = new Hop(player.position(), dest);
         ACTIVE.put(player.getUUID(), hop);
@@ -108,7 +90,7 @@ public class TimeHop {
 
     /** Destino do salto: segue para onde voc\u00ea olha, para antes de blocos e procura um lugar livre. */
     private static Vector3d findDestination(ServerPlayerEntity p) {
-        double max = p.isShiftKeyDown() ? DISTANCE_SNEAK : DISTANCE;
+        double max = p.isShiftKeyDown() ? ChronoConfig.f(ChronoConfig.REHOP_DISTANCE_SNEAK) : ChronoConfig.f(ChronoConfig.REHOP_DISTANCE);
         Vector3d eye = p.getEyePosition(1.0F);
         Vector3d look = p.getLookAngle();
         BlockRayTraceResult hit = p.level.clip(new RayTraceContext(eye, eye.add(look.scale(max)),
@@ -130,15 +112,15 @@ public class TimeHop {
     }
 
     private static void freezeAround(ServerPlayerEntity player, Hop hop) {
-        if (!FREEZE_ENEMIES) return;
-        Effect effect = ForgeRegistries.POTIONS.getValue(EFFECT_ID);
+        if (!ChronoConfig.REHOP_FREEZE_ENEMIES.get()) return;
+        Effect effect = BlockCloverBridge.stasisEffect();
         if (effect == null) return;
-        final double r = ChronoZone.RADIUS;
+        final double r = ChronoConfig.f(ChronoConfig.ZONE_RADIUS);
         AxisAlignedBB box = new AxisAlignedBB(hop.from, hop.to).inflate(r);
-        int duration = DASH_TICKS + LINGER_TICKS + 2;
+        int duration = ChronoConfig.REHOP_DASH_TICKS.get() + ChronoConfig.REHOP_LINGER_TICKS.get() + 2;
         for (LivingEntity e : player.level.getEntitiesOfClass(LivingEntity.class, box, x -> x != player && x.isAlive())) {
-            if (e instanceof PlayerEntity && !FREEZE_PLAYERS) continue;
-            if (SKIP_BOSSES && (e instanceof EnderDragonEntity || e instanceof WitherEntity)) continue;
+            if (e instanceof PlayerEntity && !ChronoConfig.REHOP_FREEZE_PLAYERS.get()) continue;
+            if (ChronoConfig.REHOP_SKIP_BOSSES.get() && (e instanceof EnderDragonEntity || e instanceof WitherEntity)) continue;
             if (distToSegment(hop.from, hop.to, e.position()) > r) continue;
             if (e.hasEffect(effect)) continue;          // j\u00e1 preso por outro efeito: n\u00e3o mexe
             e.addEffect(new EffectInstance(effect, duration));
@@ -147,7 +129,7 @@ public class TimeHop {
     }
 
     private static void finish(PlayerEntity player, Hop hop) {
-        Effect effect = ForgeRegistries.POTIONS.getValue(EFFECT_ID);
+        Effect effect = BlockCloverBridge.stasisEffect();
         for (LivingEntity e : hop.frozen) {
             if (effect != null && e.isAlive() && e.hasEffect(effect) && !e.getPersistentData().getBoolean(TAG_SUSTAINED)) {
                 e.removeEffect(effect);
@@ -169,8 +151,8 @@ public class TimeHop {
         if (!player.isAlive()) { ACTIVE.remove(player.getUUID()); finish(player, hop); return; }
         hop.tick++;
 
-        if (hop.tick <= DASH_TICKS) {
-            double f = hop.tick / (double) DASH_TICKS;
+        if (hop.tick <= ChronoConfig.REHOP_DASH_TICKS.get()) {
+            double f = hop.tick / (double) ChronoConfig.REHOP_DASH_TICKS.get();
             f = f * f * (3.0D - 2.0D * f);                              // come\u00e7a e termina suave
             Vector3d pos = hop.from.add(hop.to.subtract(hop.from).scale(f));
             player.connection.teleport(pos.x, pos.y, pos.z, 0.0F, 0.0F,
@@ -180,7 +162,7 @@ public class TimeHop {
                 ((ServerWorld) player.level).sendParticles(ParticleTypes.END_ROD,
                         pos.x, pos.y + 1.0D, pos.z, 4, 0.2D, 0.5D, 0.2D, 0.02D);
             }
-        } else if (hop.tick >= DASH_TICKS + LINGER_TICKS) {
+        } else if (hop.tick >= ChronoConfig.REHOP_DASH_TICKS.get() + ChronoConfig.REHOP_LINGER_TICKS.get()) {
             ACTIVE.remove(player.getUUID());
             finish(player, hop);
         }
@@ -201,6 +183,7 @@ public class TimeHop {
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         abort(event.getPlayer().getUUID(), event.getPlayer());
+        ChronoThrowHandler.forgetExpired(READY_AT, event.getPlayer().getUUID(), event.getPlayer().level.getGameTime());
     }
 
     @SubscribeEvent

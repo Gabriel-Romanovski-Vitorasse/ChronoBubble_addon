@@ -41,18 +41,6 @@ import java.util.UUID;
  */
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TimeHopEffects {
-    public static boolean ENABLED = true;
-    public static int FALL_IMMUNITY_TICKS = 100;
-    public static int PROTECT_TICKS = 10;
-    public static boolean PULSE_ENABLED = true;
-    public static float PULSE_RADIUS = 6.0F;
-    public static int PULSE_TICKS = 20;
-    public static boolean PULSE_PLAYERS = false;
-    public static boolean PULSE_BOSSES = false;
-    public static boolean TRAIL_ENABLED = true;
-    public static int TRAIL_TICKS = 40;
-
-    private static final ResourceLocation EFFECT_ID = new ResourceLocation("block_clover", "chrono_stasis");
 
     private static final class Pending {
         final Vector3d from; final long tick; int waited;
@@ -74,7 +62,7 @@ public class TimeHopEffects {
 
     /** Chamado quando o jogador aciona o Time Hop (antes do teletransporte original rodar). */
     public static void noteUse(ServerPlayerEntity p) {
-        if (!ENABLED) return;
+        if (!ChronoConfig.HOP_ENABLED.get()) return;
         PENDING.put(p.getUUID(), new Pending(p));
     }
 
@@ -96,35 +84,35 @@ public class TimeHopEffects {
 
     private static void onHopped(ServerPlayerEntity p, Pending pend) {
         long now = p.level.getGameTime();
-        if (FALL_IMMUNITY_TICKS > 0) NO_FALL.put(p.getUUID(), now + FALL_IMMUNITY_TICKS);
-        if (PROTECT_TICKS > 0) PROTECT.put(p.getUUID(), now + PROTECT_TICKS);
+        if (ChronoConfig.HOP_FALL_TICKS.get() > 0) NO_FALL.put(p.getUUID(), now + ChronoConfig.HOP_FALL_TICKS.get());
+        if (ChronoConfig.HOP_PROTECT_TICKS.get() > 0) PROTECT.put(p.getUUID(), now + ChronoConfig.HOP_PROTECT_TICKS.get());
         p.fallDistance = 0.0F;
         if (!(p.level instanceof ServerWorld)) return;
         ServerWorld w = (ServerWorld) p.level;
-        if (TRAIL_ENABLED && TRAIL_TICKS > 0) {
+        if (ChronoConfig.HOP_TRAIL.get() && ChronoConfig.HOP_TRAIL_TICKS.get() > 0) {
             ChronoBubbleMod.CHANNEL.send(PacketDistributor.NEAR.with(() ->
                             new PacketDistributor.TargetPoint(pend.from.x, pend.from.y, pend.from.z, 96.0D, w.dimension())),
                     new HopGhostPacket(p.getId(), pend.from.x, pend.from.y, pend.from.z,
-                            pend.yRot, pend.xRot, pend.body, pend.head, TRAIL_TICKS));
+                            pend.yRot, pend.xRot, pend.body, pend.head, ChronoConfig.HOP_TRAIL_TICKS.get()));
         }
-        if (PULSE_ENABLED && PULSE_TICKS > 0) startPulse(p, w);
+        if (ChronoConfig.HOP_PULSE.get() && ChronoConfig.HOP_PULSE_TICKS.get() > 0) startPulse(p, w);
     }
 
     private static void startPulse(ServerPlayerEntity p, ServerWorld w) {
-        Pulse pulse = new Pulse(w, p.position(), PULSE_TICKS);
-        Effect effect = ForgeRegistries.POTIONS.getValue(EFFECT_ID);
-        AxisAlignedBB box = p.getBoundingBox().inflate(PULSE_RADIUS);
+        Pulse pulse = new Pulse(w, p.position(), ChronoConfig.HOP_PULSE_TICKS.get());
+        Effect effect = BlockCloverBridge.stasisEffect();
+        AxisAlignedBB box = p.getBoundingBox().inflate(ChronoConfig.f(ChronoConfig.HOP_PULSE_RADIUS));
         if (effect != null) {
             for (LivingEntity e : w.getEntitiesOfClass(LivingEntity.class, box, x -> x != p && x.isAlive())) {
-                if (e.distanceTo(p) > PULSE_RADIUS) continue;
-                if (e instanceof PlayerEntity && !PULSE_PLAYERS) continue;
-                if (!PULSE_BOSSES && (e instanceof EnderDragonEntity || e instanceof WitherEntity)) continue;
+                if (e.distanceTo(p) > ChronoConfig.f(ChronoConfig.HOP_PULSE_RADIUS)) continue;
+                if (e instanceof PlayerEntity && !ChronoConfig.HOP_PULSE_PLAYERS.get()) continue;
+                if (!ChronoConfig.HOP_PULSE_BOSSES.get() && (e instanceof EnderDragonEntity || e instanceof WitherEntity)) continue;
                 if (e.hasEffect(effect)) continue;       // j\u00e1 parado por outro efeito: n\u00e3o mexe
-                e.addEffect(new EffectInstance(effect, PULSE_TICKS));
+                e.addEffect(new EffectInstance(effect, ChronoConfig.HOP_PULSE_TICKS.get()));
             }
         }
         for (ProjectileEntity s : w.getEntitiesOfClass(ProjectileEntity.class, box, x -> x.isAlive())) {
-            if (s.distanceTo(p) > PULSE_RADIUS) continue;
+            if (s.distanceTo(p) > ChronoConfig.f(ChronoConfig.HOP_PULSE_RADIUS)) continue;
             if (s.getOwner() == p) continue;
             pulse.shots.add(s);
             pulse.motion.add(s.getDeltaMovement());
@@ -146,7 +134,7 @@ public class TimeHopEffects {
             Pulse pu = it.next();
             pu.age++;
             // anel que se expande at\u00e9 o raio do pulso
-            double r = PULSE_RADIUS * Math.min(1.0D, pu.age / 6.0D);
+            double r = ChronoConfig.f(ChronoConfig.HOP_PULSE_RADIUS) * Math.min(1.0D, pu.age / 6.0D);
             if (pu.age <= 8) {
                 for (int i = 0; i < 24; i++) {
                     double a = i * Math.PI * 2.0D / 24.0D;
