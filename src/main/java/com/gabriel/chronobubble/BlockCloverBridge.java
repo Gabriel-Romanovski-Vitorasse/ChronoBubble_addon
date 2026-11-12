@@ -43,12 +43,19 @@ public class BlockCloverBridge {
     /** Regras da Time Ressurection no Block Clover 0.5 (copiadas do mod: carga m\u00ednima e Time m\u00ednimo). */
     public static final double RESSURECTION_FULL_STRAIN = 3600.0D;
     public static final int RESSURECTION_MIN_TIME = 300;
-    public static final String CLS_ABILITY_USE_EVENT = PKG + "api.ability.AbilityUseEvent";
     /**
-     * Disparado ANTES de a habilidade agir (e cancel\u00e1vel). O Block Clover tamb\u00e9m dispara um {@code $Post} depois;
-     * quem escuta a classe base recebe os dois, e no Time Hop o Post j\u00e1 chega com o jogador teleportado.
+     * Evento de uso de habilidade. O Block Clover 0.5 dispara de dois jeitos (conferido no bytecode):
+     * <ul>
+     *   <li>habilidades comuns (Time Hop, Grigora): {@code AbilityUseEvent$Pre} antes de agir e
+     *   {@code AbilityUseEvent$Post} depois;</li>
+     *   <li>habilidades cont\u00ednuas/de soco (Chrono Stasis, Time Steal): o {@code AbilityUseEvent} base, uma vez.</li>
+     * </ul>
+     * Por isso o addon escuta a classe base (que recebe os tr\u00eas) e ignora o Post, que chega depois de a habilidade
+     * agir (no Time Hop, com o jogador j\u00e1 teleportado).
      */
-    public static final String CLS_ABILITY_USE_PRE = CLS_ABILITY_USE_EVENT + "$Pre";
+    public static final String CLS_ABILITY_USE_EVENT = PKG + "api.ability.AbilityUseEvent";
+    /** Sufixo do evento disparado DEPOIS de a habilidade agir (ver acima). */
+    public static final String ABILITY_USE_POST_SUFFIX = "$Post";
 
     private static Effect stasisEffect;
 
