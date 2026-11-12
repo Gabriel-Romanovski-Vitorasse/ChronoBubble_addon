@@ -23,3 +23,6 @@ run
 
 # Files from Forge MDK
 forge*changelog.txt
+
+# logs gerados pelo Forge/Gradle ao compilar
+logs
