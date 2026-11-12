@@ -4,8 +4,12 @@ Addon para **Minecraft 1.16.5 / Forge 36** que amplia a magia de Tempo do mod
 **Block Clover**.
 
 O addon acessa o Block Clover por reflexão: compila sem o `.jar` dele e, se o Block Clover
-não estiver instalado (ou mudar internamente), os recursos que dependem dele simplesmente não fazem nada.
-O addon precisa estar instalado **no servidor e nos clientes**.
+não estiver instalado (ou mudar internamente), os recursos que dependem dele ficam desligados. Ao iniciar, o log
+diz o que foi encontrado (procure por `[ChronoBubble] Block Clover:`), para ficar fácil ver o que parou de funcionar
+depois de uma atualização do Block Clover.
+
+O addon precisa estar instalado **no servidor e nos clientes, na mesma versão**. Quem tentar entrar sem ele, ou com
+outra versão, é recusado ao conectar.
 
 ## Recursos
 
@@ -20,10 +24,13 @@ O addon precisa estar instalado **no servidor e nos clientes**.
 | Acelerar o tempo (Velocidade e Pressa para você, Lentidão para os mobs em volta) | tecla **V** |
 | Antever ataques (avisa projéteis e mobs prestes a te atingir) | automático para usuários de Tempo |
 | Efeitos extras do Time Hop (sem dano de queda, chegada protegida, pulso de tempo parado, bolha fantasma) | automático ao usar o Time Hop |
+| Time Hop reformulado (deslize dentro de uma esfera de tempo parado, no lugar do teletransporte) | desligado por padrão; ligue em `hop_rework.enabled` |
 | Números romanos subindo ao roubar Time | automático |
 | Swallowtail: artefato que armazena Time | clique direito guarda, Shift + clique direito devolve |
 | Renascimento com grimório de uma página | ver abaixo |
 | Tela de configuração | tecla **K** ou Mods → Chrono Bubble → Config |
+| Estado do addon para um jogador | `/chronobubble status` (o seu) ou `/chronobubble status <jogador>` (operadores) |
+| Conquistas: *Asas do Tempo*, *Reserva Completa*, *O Tempo Não Para* | aba própria no menu de conquistas |
 
 Todas as teclas podem ser trocadas em Opções → Controles → Chrono Bubble.
 
@@ -46,18 +53,49 @@ M V M      D = Diamante, C = Relógio
 
 ## Configuração
 
-O arquivo `config/chrono_bubble-common.toml` é criado na primeira vez que o jogo abre.
-Em servidor dedicado, valem os valores do arquivo do servidor.
+São dois arquivos:
 
-## Compilar
+| Arquivo | O que tem | Onde fica |
+|---|---|---|
+| `chrono_bubble-server.toml` | regras de jogo (custos, raios, recargas, renascimento...) | `<mundo>/serverconfig/` |
+| `chrono_bubble-client.toml` | visual e HUD deste computador | `config/` |
 
-Requer JDK 8.
+As regras do servidor são enviadas a cada jogador ao entrar, então todos jogam (e veem a zona) com os mesmos valores.
+Para que um mundo novo já nasça com as suas regras, copie o `chrono_bubble-server.toml` para a pasta `defaultconfigs/`.
+
+Na tela de configuração (tecla **K**), as regras do servidor só podem ser mudadas num mundo aberto neste computador
+(singleplayer ou LAN). Num servidor de outra pessoa elas aparecem só para leitura.
+
+> Versões antigas usavam `config/chrono_bubble-common.toml`. Esse arquivo não é mais lido; se você tinha mudado
+> algo nele, repita as mudanças no novo `chrono_bubble-server.toml`.
+
+## Compilar e testar
+
+Requer JDK 8 (o Gradle 7.3 também roda com JDK 11 ou 17, mas não com 21).
 
 ```bash
 ./gradlew build
 ```
 
-O `.jar` fica em `build/libs/`.
+O `.jar` fica em `build/libs/`. O `build` também roda os testes JUnit (`src/test/java`), que cobrem as contas puras:
+números romanos, previsão de trajetória de projéteis e o cruzamento de projéteis com a esfera da zona.
+Só os testes:
+
+```bash
+./gradlew test
+```
+
+A cada push, o GitHub Actions (`.github/workflows/build.yml`) compila, roda os testes e publica o `.jar` como artefato.
+
+## Estrutura do código
+
+| Classe | Papel |
+|---|---|
+| `BlockCloverBridge` | todo acesso ao Block Clover (reflexão), com os nomes de classes e ids num lugar só |
+| `ChronoConfig` | opções dos dois arquivos; o código lê direto daqui (`ChronoConfig.X.get()`) |
+| `ManaDrainAbility` | base abstrata das habilidades liga/desliga que gastam mana por segundo (`ChronoZone`, `TimeAcceleration`) |
+| `Msg` | mensagens traduzíveis (`assets/chrono_bubble/lang`) |
+| `Client*` | tudo o que só existe no cliente (desenho, teclas, HUD) |
 
 ## Idiomas
 
