@@ -265,5 +265,12 @@
   "advancements.chrono_bubble.rebirth.title": "O Tempo Não Para",
   "advancements.chrono_bubble.rebirth.description": "Renasça usando o Time guardado na Swallowtail",
   "msg.chrono_bubble.hop_cooldown": "Time Hop em recarga: %ss",
-  "msg.chrono_bubble.hop_no_space": "Sem espaço para saltar nessa direção."
+  "msg.chrono_bubble.hop_no_space": "Sem espaço para saltar nessa direção.",
+  "config.chrono_bubble.precognition.require_time_magic_zone": "Exige a Time Magic Zone",
+  "config.chrono_bubble.precognition.require_time_magic_zone.tooltip": "true = só funciona com a passiva Time Magic Zone do Block Clover desbloqueada e ativa (é ela que 'sente ataques futuros')",
+  "config.chrono_bubble.rebirth.time_ressurection_first": "Time Ressurection antes da Swallowtail",
+  "config.chrono_bubble.rebirth.time_ressurection_first.tooltip": "true = ao receber um golpe fatal, a passiva Time Ressurection age primeiro se estiver pronta (carga cheia e mais de 300 de Time; consome todo o Time) e a Swallowtail fica intacta. Se não estiver pronta, vale o renascimento pela Swallowtail.",
+  "msg.chrono_bubble.ressurection_saved": "A Time Ressurection consumiu todo o seu Time e te salvou do golpe fatal. A Swallowtail não foi usada.",
+  "msg.chrono_bubble.status_magic_zone": "Time Magic Zone ativa (antever ataques): %s",
+  "msg.chrono_bubble.status_ressurection": "Time Ressurection pronta: %s"
 }

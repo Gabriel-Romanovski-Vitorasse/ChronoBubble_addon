@@ -3,6 +3,12 @@
 ## 1.1.0 (não lançado)
 
 ### Adicionado
+- "Antever ataques" agora exige a passiva **Time Magic Zone** do Block Clover (a magia que "sente ataques futuros")
+  desbloqueada e ativa. Opção `precognition.require_time_magic_zone`.
+- A passiva **Time Ressurection** do Block Clover age antes do renascimento pela Swallowtail: se estiver pronta, salva
+  o jogador também de golpes que matariam de uma vez (o Block Clover só a checava no tick seguinte) e a Swallowtail
+  fica intacta. Opção `rebirth.time_ressurection_first`.
+- `/chronobubble status` mostra se a Time Magic Zone está ativa e se a Time Ressurection está pronta.
 - Comando `/chronobubble status [jogador]` com Time, mana, renascimento, Swallowtail e habilidades ativas.
 - Conquistas: *Asas do Tempo* (obter uma Swallowtail), *Reserva Completa* (encher uma) e *O Tempo Não Para*
   (renascer).
@@ -43,6 +49,9 @@
 - A esfera piscando (tempo instável) só aparecia para quem já estava por perto.
 - A esfera de Time Steal ou sustentada voltava como esfera comum ao recarregar o mundo.
 - Mensagens do Time Hop reformulado não eram traduzíveis.
+- Os efeitos extras do Time Hop (sem dano de queda, chegada protegida, pulso, bolha fantasma) nunca disparavam:
+  o addon escutava tanto o `AbilityUseEvent.Pre` quanto o `.Post` do Block Clover, e o `Post` chegava com o jogador
+  já teleportado, apagando o ponto de partida. Agora só o `Pre` é escutado.
 
 ## 1.0.0
 - Primeira versão.

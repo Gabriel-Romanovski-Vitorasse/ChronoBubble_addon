@@ -22,7 +22,7 @@ outra versão, é recusado ao conectar.
 | Chrono Stasis Grigora sustentado (prende todos em volta) | Alt + Chrono Stasis Grigora |
 | Zona de Chrono Stasis (para projéteis de outros no ar) | tecla **B** |
 | Acelerar o tempo (Velocidade e Pressa para você, Lentidão para os mobs em volta) | tecla **V** |
-| Antever ataques (avisa projéteis e mobs prestes a te atingir) | automático para usuários de Tempo |
+| Antever ataques (avisa projéteis e mobs prestes a te atingir) | automático com a passiva **Time Magic Zone** do Block Clover ativa |
 | Efeitos extras do Time Hop (sem dano de queda, chegada protegida, pulso de tempo parado, bolha fantasma) | automático ao usar o Time Hop |
 | Time Hop reformulado (deslize dentro de uma esfera de tempo parado, no lugar do teletransporte) | desligado por padrão; ligue em `hop_rework.enabled` |
 | Números romanos subindo ao roubar Time | automático |
@@ -42,6 +42,9 @@ Todas as teclas podem ser trocadas em Opções → Controles → Chrono Bubble.
 - Renascido, o jogador fica com o grimório de uma página: Chrono Stasis e Chrono Stasis Grigora ficam bloqueados,
   não há regeneração passiva de Time e não dá para sacar Time da Swallowtail. O Time só volta roubando.
 - Ao chegar ao `unlock_time` (padrão 200), o grimório e os poderes voltam (é preciso equipá-los de novo).
+- **A passiva Time Ressurection do Block Clover vem antes da Swallowtail.** Se ela estiver pronta (carga cheia e mais
+  de 300 de Time), ela salva o jogador até de um golpe que mataria de uma vez, consumindo todo o Time como de costume,
+  e a Swallowtail não é usada. Se não estiver pronta, vale o renascimento pela Swallowtail.
 
 ### Receita da Swallowtail
 

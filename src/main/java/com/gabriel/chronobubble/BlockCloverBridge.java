@@ -36,7 +36,19 @@ public class BlockCloverBridge {
     public static final String CLS_GRIGORA = PKG + "spells.time.ChronoStasisGrigoraAbility";
     public static final String CLS_STEAL = PKG + "spells.time.TimeStealAbility";
     public static final String CLS_HOP = PKG + "spells.time.TimeHopAbility";
+    /** Passiva "Time Magic Zone": sente ataques futuros. */
+    public static final String CLS_MAGIC_ZONE = PKG + "spells.time.TimeMagicManaZoneAbility";
+    /** Passiva "Time Ressurection": com a carga cheia, consome todo o Time e cura o jogador quase morto. */
+    public static final String CLS_RESSURECTION = PKG + "spells.time.TimeRessurectionAbility";
+    /** Regras da Time Ressurection no Block Clover 0.5 (copiadas do mod: carga m\u00ednima e Time m\u00ednimo). */
+    public static final double RESSURECTION_FULL_STRAIN = 3600.0D;
+    public static final int RESSURECTION_MIN_TIME = 300;
     public static final String CLS_ABILITY_USE_EVENT = PKG + "api.ability.AbilityUseEvent";
+    /**
+     * Disparado ANTES de a habilidade agir (e cancel\u00e1vel). O Block Clover tamb\u00e9m dispara um {@code $Post} depois;
+     * quem escuta a classe base recebe os dois, e no Time Hop o Post j\u00e1 chega com o jogador teleportado.
+     */
+    public static final String CLS_ABILITY_USE_PRE = CLS_ABILITY_USE_EVENT + "$Pre";
 
     private static Effect stasisEffect;
 
@@ -60,6 +72,9 @@ public class BlockCloverBridge {
     private static Method getMana, alterMana, alterTime, alterExperience;
     private static Method abilityGet, hasUnlocked, remUnlocked, remEquipped, addUnlocked;
     private static Method sendTo;
+    private static Method getUnlockedFiltered, passiveIsPaused;
+    private static Class<?> passiveClass, magicZoneClass, ressurectionClass;
+    private static Method ressurectionStrain, ressurectionReset;
     private static Method getEquipped;
     private static Object categoryAll;
     private static Class<?> stealClass;
@@ -106,6 +121,18 @@ public class BlockCloverBridge {
                     stealIsContinuous = stealClass.getMethod("isContinuous");
                 } catch (Throwable ignored) {
                     // sem o Time Steal: o ganho fixo do soco simplesmente n\u00e3o age
+                }
+                try {
+                    getUnlockedFiltered = data.getMethod("getUnlockedAbilities", java.util.function.Predicate.class);
+                    passiveClass = Class.forName(PKG + "api.ability.sorts.PassiveAbility");
+                    passiveIsPaused = passiveClass.getMethod("isPaused");
+                    magicZoneClass = Class.forName(CLS_MAGIC_ZONE);
+                    ressurectionClass = Class.forName(CLS_RESSURECTION);
+                    ressurectionStrain = ressurectionClass.getMethod("getStrain");
+                    ressurectionReset = ressurectionClass.getMethod("resetReviveTime", PlayerEntity.class, boolean.class);
+                } catch (Throwable ignored) {
+                    // sem as passivas: "antever" n\u00e3o exige a Time Magic Zone e a Time Ressurection n\u00e3o salva de golpes fatais
+                    passiveClass = null;
                 }
 
                 Class<?> ph = Class.forName(PKG + "networking.PacketHandler");
@@ -178,9 +205,9 @@ public class BlockCloverBridge {
             return;
         }
         init();
-        LOGGER.info("[ChronoBubble] Block Clover: estatisticas {}, habilidades {}, sincronizacao {}, Time Steal {}",
-                ok(statsOk), ok(abilitiesOk), ok(syncOk), ok(stealIsContinuous != null));
-        if (!statsOk || !abilitiesOk || !syncOk || stealIsContinuous == null) {
+        LOGGER.info("[ChronoBubble] Block Clover: estatisticas {}, habilidades {}, sincronizacao {}, Time Steal {}, passivas {}",
+                ok(statsOk), ok(abilitiesOk), ok(syncOk), ok(stealIsContinuous != null), ok(passiveClass != null));
+        if (!statsOk || !abilitiesOk || !syncOk || stealIsContinuous == null || passiveClass == null) {
             LOGGER.warn("[ChronoBubble] Parte do Block Clover nao foi encontrada (versao diferente?). "
                     + "Os recursos que dependem dela ficam desligados.");
         }
@@ -188,6 +215,63 @@ public class BlockCloverBridge {
 
     private static String ok(boolean b) {
         return b ? "OK" : "FALHOU";
+    }
+
+    /** A inst\u00e2ncia desbloqueada de uma passiva (onde o Block Clover guarda o estado dela), ou null. */
+    private static Object unlockedPassive(PlayerEntity player, Class<?> cls) throws Exception {
+        if (passiveClass == null || cls == null) return null;
+        Object data = abilityGet.invoke(null, player);
+        if (data == null) return null;
+        java.util.function.Predicate<Object> isIt = cls::isInstance;
+        List<?> found = (List<?>) getUnlockedFiltered.invoke(data, isIt);
+        return found == null || found.isEmpty() ? null : found.get(0);
+    }
+
+    /** A passiva est\u00e1 desbloqueada e n\u00e3o est\u00e1 pausada (\u00e9 assim que o Block Clover decide se ela age). */
+    private static boolean passiveActive(PlayerEntity player, Class<?> cls) {
+        init();
+        try {
+            Object p = unlockedPassive(player, cls);
+            return p != null && !(Boolean) passiveIsPaused.invoke(p);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** As passivas foram encontradas no Block Clover (sen\u00e3o as regras que dependem delas ficam desligadas). */
+    public static boolean passivesAvailable() {
+        init();
+        return passiveClass != null;
+    }
+
+    /** A passiva Time Magic Zone est\u00e1 ativa. */
+    public static boolean hasTimeMagicZone(PlayerEntity player) {
+        return passiveActive(player, magicZoneClass);
+    }
+
+    /**
+     * A Time Ressurection est\u00e1 pronta para salvar o jogador, pelas regras do pr\u00f3prio Block Clover:
+     * passiva ativa, carga cheia e mais de {@link #RESSURECTION_MIN_TIME} de Time.
+     */
+    public static boolean isRessurectionReady(PlayerEntity player) {
+        init();
+        try {
+            Object p = unlockedPassive(player, ressurectionClass);
+            if (p == null || (Boolean) passiveIsPaused.invoke(p)) return false;
+            return (Double) ressurectionStrain.invoke(p) >= RESSURECTION_FULL_STRAIN && getTime(player) > RESSURECTION_MIN_TIME;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** Zera a carga da Time Ressurection (como o Block Clover faz depois de us\u00e1-la). */
+    public static void resetRessurection(PlayerEntity player) {
+        init();
+        try {
+            Object p = unlockedPassive(player, ressurectionClass);
+            if (p != null) ressurectionReset.invoke(p, player, true);
+        } catch (Throwable ignored) {
+        }
     }
 
     /** O jogador tem o Chrono Stasis liberado (some quando ele est\u00e1 "renascido"). */

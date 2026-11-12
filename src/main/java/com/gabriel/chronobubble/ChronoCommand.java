@@ -41,6 +41,8 @@ public final class ChronoCommand {
         line(src, "status_combat", yesNo(BlockCloverBridge.isInCombat(p)));
         line(src, "status_stasis", yesNo(BlockCloverBridge.hasChronoStasis(p)));
         line(src, "status_swallowtail", SwallowtailItem.totalStored(p));
+        line(src, "status_magic_zone", yesNo(BlockCloverBridge.hasTimeMagicZone(p)));
+        line(src, "status_ressurection", yesNo(BlockCloverBridge.isRessurectionReady(p)));
         line(src, "status_reborn", RebirthHandler.isReborn(p)
                 ? Msg.tr(TextFormatting.YELLOW, "status_reborn_yes", ChronoConfig.REBIRTH_UNLOCK_TIME.get())
                 : yesNo(false));

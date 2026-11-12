@@ -49,7 +49,9 @@ public class Precognition {
         List<Integer> ids = new ArrayList<>();
         List<Byte> kinds = new ArrayList<>();
         if (ChronoConfig.PRECOG_ENABLED.get() && player.isAlive() && BlockCloverBridge.isTimeUser(player)
-                && (!ChronoConfig.PRECOG_REQUIRE_COMBAT.get() || BlockCloverBridge.isInCombat(player))) {
+                && (!ChronoConfig.PRECOG_REQUIRE_COMBAT.get() || BlockCloverBridge.isInCombat(player))
+                && (!ChronoConfig.PRECOG_REQUIRE_MAGIC_ZONE.get() || !BlockCloverBridge.passivesAvailable()
+                    || BlockCloverBridge.hasTimeMagicZone(player))) {       // sem as passivas no Block Clover: n\u00e3o exige
             scan(player, ids, kinds);
         }
 

@@ -265,5 +265,12 @@
   "advancements.chrono_bubble.rebirth.title": "Time Never Stops",
   "advancements.chrono_bubble.rebirth.description": "Be reborn using the Time stored in a Swallowtail",
   "msg.chrono_bubble.hop_cooldown": "Time Hop on cooldown: %ss",
-  "msg.chrono_bubble.hop_no_space": "No room to hop in that direction."
+  "msg.chrono_bubble.hop_no_space": "No room to hop in that direction.",
+  "config.chrono_bubble.precognition.require_time_magic_zone": "Requires Time Magic Zone",
+  "config.chrono_bubble.precognition.require_time_magic_zone.tooltip": "true = only works with Block Clover's Time Magic Zone passive unlocked and active (it is the one that 'senses future attacks')",
+  "config.chrono_bubble.rebirth.time_ressurection_first": "Time Ressurection before the Swallowtail",
+  "config.chrono_bubble.rebirth.time_ressurection_first.tooltip": "true = on a killing blow, the Time Ressurection passive acts first if it is ready (full charge and more than 300 Time; consumes all Time) and the Swallowtail is left untouched. If it is not ready, the Swallowtail rebirth applies.",
+  "msg.chrono_bubble.ressurection_saved": "Time Ressurection consumed all your Time and saved you from the killing blow. The Swallowtail was not used.",
+  "msg.chrono_bubble.status_magic_zone": "Time Magic Zone active (precognition): %s",
+  "msg.chrono_bubble.status_ressurection": "Time Ressurection ready: %s"
 }

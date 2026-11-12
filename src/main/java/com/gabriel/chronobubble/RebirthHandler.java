@@ -3,8 +3,10 @@ package com.gabriel.chronobubble;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.particles.ParticleTypes;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -53,6 +55,36 @@ public class RebirthHandler {
     }
 
     // ---------- Morte e respawn ----------
+
+    /**
+     * Golpe fatal com a passiva Time Ressurection do Block Clover pronta: ela age primeiro, com as regras dela
+     * (carga cheia, mais de 300 de Time, consome todo o Time, cura a vida toda), e a Swallowtail fica intacta.
+     * <p>
+     * O Block Clover s\u00f3 checa a passiva no tick, quando a vida j\u00e1 est\u00e1 abaixo de 1 cora\u00e7\u00e3o, ent\u00e3o um golpe que
+     * mata de uma vez passava direto por ela e gastava a Swallowtail. HIGHEST: se ela salvar, o evento \u00e9 cancelado
+     * antes de qualquer outro tratamento de morte (zona, sustentado, etc. continuam ligados).
+     */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onFatalBlow(LivingDeathEvent event) {
+        if (!ChronoConfig.REBIRTH_ENABLED.get() || !ChronoConfig.REBIRTH_RESSURECTION_FIRST.get()) return;
+        if (!(event.getEntityLiving() instanceof ServerPlayerEntity)) return;
+        if (event.getSource().isBypassInvul()) return;           // vazio e /kill: nem a passiva salva
+        ServerPlayerEntity player = (ServerPlayerEntity) event.getEntityLiving();
+        if (!BlockCloverBridge.isRessurectionReady(player)) return;
+
+        event.setCanceled(true);
+        player.setHealth(player.getMaxHealth());
+        BlockCloverBridge.setTime(player, 0);
+        BlockCloverBridge.resetRessurection(player);
+        BlockCloverBridge.syncToClient(player);
+        if (player.level instanceof ServerWorld) {
+            ((ServerWorld) player.level).sendParticles(ParticleTypes.END_ROD,
+                    player.getX(), player.getY() + 1.0D, player.getZ(), 40, 0.4D, 0.8D, 0.4D, 0.08D);
+        }
+        player.level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                ChronoBubbleMod.STASIS_START.get(), SoundCategory.PLAYERS, 1.0F, 0.5F);
+        Msg.chat(player, TextFormatting.AQUA, "ressurection_saved");
+    }
 
     /** LOWEST e sem receber eventos cancelados: se outro mod impedir a morte, a Swallowtail n\u00e3o \u00e9 esvaziada. */
     @SubscribeEvent(priority = EventPriority.LOWEST)
