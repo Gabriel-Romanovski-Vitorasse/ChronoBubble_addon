@@ -51,7 +51,8 @@
 - Mensagens do Time Hop reformulado não eram traduzíveis.
 - Os efeitos extras do Time Hop (sem dano de queda, chegada protegida, pulso, bolha fantasma) nunca disparavam:
   o addon escutava tanto o `AbilityUseEvent.Pre` quanto o `.Post` do Block Clover, e o `Post` chegava com o jogador
-  já teleportado, apagando o ponto de partida. Agora só o `Pre` é escutado.
+  já teleportado, apagando o ponto de partida. Agora o `Post` é ignorado. (Uma primeira versão dessa correção
+  escutava só o `Pre` e quebrou os arremessos, porque Chrono Stasis e Time Steal disparam o evento base, sem `Pre`.)
 
 ## 1.0.0
 - Primeira versão.

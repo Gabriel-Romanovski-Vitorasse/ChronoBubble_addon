@@ -39,13 +39,8 @@ public class ChronoThrowHandler {
         MinecraftForge.EVENT_BUS.addListener(ChronoThrowHandler::onPlayerTick);
         MinecraftForge.EVENT_BUS.addListener(ChronoThrowHandler::onLogout);
         try {
-            ClassLoader cl = ChronoThrowHandler.class.getClassLoader();
-            Class<?> pre;
-            try {
-                pre = Class.forName(BlockCloverBridge.CLS_ABILITY_USE_PRE, false, cl);     // s\u00f3 o "antes" (ver o Bridge)
-            } catch (ClassNotFoundException e) {
-                pre = Class.forName(BlockCloverBridge.CLS_ABILITY_USE_EVENT, false, cl);   // vers\u00f5es sem Pre/Post
-            }
+            // classe base: recebe o evento das habilidades de soco e o Pre/Post das comuns (ver o Bridge)
+            Class<?> pre = Class.forName(BlockCloverBridge.CLS_ABILITY_USE_EVENT, false, ChronoThrowHandler.class.getClassLoader());
             Consumer<Event> handler = ChronoThrowHandler::onAbilityUse;
             MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGH, false, (Class) pre, (Consumer) handler);
             LOGGER.info("[ChronoBubble] Escuta de " + pre.getSimpleName() + " registrada.");
@@ -100,9 +95,19 @@ public class ChronoThrowHandler {
         }
     }
 
+    /**
+     * O addon age neste evento de uso? Sim para o evento base (habilidades de soco: Chrono Stasis, Time Steal) e
+     * para o Pre (habilidades comuns: Time Hop, Grigora); n\u00e3o para o Post, que chega depois de a habilidade agir.
+     * Escutar s\u00f3 o Pre quebrava os arremessos, porque as habilidades de soco nunca disparam Pre.
+     */
+    static boolean actsOn(Object abilityUseEvent) {
+        return !abilityUseEvent.getClass().getName().endsWith(BlockCloverBridge.ABILITY_USE_POST_SUFFIX);
+    }
+
     private static void onAbilityUse(Event event) {
         if (!ChronoConfig.THROW_ENABLED.get()) return;
         if (!(event instanceof PlayerEvent)) return;
+        if (!actsOn(event)) return;
         PlayerEntity player = ((PlayerEvent) event).getPlayer();
         if (player.level.isClientSide || !(player instanceof ServerPlayerEntity)) return;
         String name = BlockCloverBridge.abilityClassName(event);
