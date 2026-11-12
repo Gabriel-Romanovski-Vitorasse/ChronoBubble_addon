@@ -11,6 +11,9 @@ import net.minecraft.util.math.vector.Vector3f;
 /** Desenha a esfera arremessada: uma bolha pequena com um anel de numerais girando. */
 public class StasisOrbRenderer extends EntityRenderer<StasisOrbEntity> {
     private static final float RADIUS = 0.2F;
+    /** Largura da faixa em fra\u00e7\u00e3o do raio e multiplicador da velocidade de giro (a esfera \u00e9 pequena e r\u00e1pida). */
+    private static final float ORB_BAND = 0.32F;
+    private static final float ORB_SPIN = 6.0F;
 
     public StasisOrbRenderer(EntityRendererManager manager) {
         super(manager);
@@ -22,13 +25,9 @@ public class StasisOrbRenderer extends EntityRenderer<StasisOrbEntity> {
         float time = entity.tickCount + partialTicks;
         stack.pushPose();
         stack.translate(0.0D, entity.getBbHeight() * 0.5D, 0.0D);
-        StasisBubbleRenderer.drawSphere(stack,
-                buffers.getBuffer(RenderType.entityTranslucent(StasisBubbleRenderer.SPHERE_TEX)), RADIUS, 0.85F);
-        stack.mulPose(Vector3f.ZP.rotationDegrees(30.0F));
-        stack.mulPose(Vector3f.YP.rotationDegrees(time * 14.0F));
-        StasisBubbleRenderer.drawRing(stack,
-                buffers.getBuffer(RenderType.entityTranslucent(StasisBubbleRenderer.RING_TEX)),
-                RADIUS * 1.15F, RADIUS * 0.55F, 0.95F);
+        // a mesma bolha dos mobs congelados, em miniatura: esfera com a faixa de numerais (mais larga, para aparecer
+        // num objeto t\u00e3o pequeno, e girando mais r\u00e1pido, para dar a sensa\u00e7\u00e3o de movimento)
+        StasisBubbleRenderer.drawBubble(stack, buffers, RADIUS, 1.0F, time * ORB_SPIN, ORB_BAND);
         stack.popPose();
         super.render(entity, yaw, partialTicks, stack, buffers, light);
     }

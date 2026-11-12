@@ -90,6 +90,11 @@ Só os testes:
 
 A cada push, o GitHub Actions (`.github/workflows/build.yml`) compila, roda os testes e publica o `.jar` como artefato.
 
+## Ferramentas
+
+A pasta `tools/` tem scripts Python para gerar a textura da faixa de numerais, gerar o `ChronoConfig.java` a partir
+de `tools/config/opts.py` e fazer uma prévia da bolha do Chrono Stasis fora do jogo. Veja `tools/README.md`.
+
 ## Estrutura do código
 
 | Classe | Papel |

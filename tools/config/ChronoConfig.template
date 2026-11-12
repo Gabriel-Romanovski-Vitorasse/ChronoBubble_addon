@@ -1,0 +1,102 @@
+package com.gabriel.chronobubble;
+
+import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.config.ModConfig;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Configuração, em dois arquivos:
+ * <ul>
+ *   <li><b>servidor</b> ({@code <mundo>/serverconfig/chrono_bubble-server.toml}): regras de jogo. O Forge manda uma
+ *   cópia para cada cliente ao entrar, então o cliente desenha com os mesmos valores do servidor (ex.: raio da zona).
+ *   Para valer em mundos novos, copie o arquivo para {@code defaultconfigs/}.</li>
+ *   <li><b>cliente</b> ({@code config/chrono_bubble-client.toml}): só visual e HUD deste computador.</li>
+ * </ul>
+ * O código lê os valores direto daqui ({@code ChronoConfig.X.get()}); não há cópia em outras classes.
+ * Antes de o arquivo carregar (ex.: no menu principal), {@code get()} devolve o valor padrão.
+ * Os nomes e dicas da tela de configuração ficam nos arquivos de idioma ({@code config.chrono_bubble.*}).
+ * <p>
+ * ARQUIVO GERADO por {@code tools/config/genconfig.py} a partir de {@code tools/config/opts.py}: para mudar uma
+ * opção, edite o opts.py e rode o gerador (não edite este arquivo à mão).
+ */
+public final class ChronoConfig {
+    private ChronoConfig() {
+    }
+
+    /** Descrição de uma opção, usada pela tela de configuração. */
+    public static final class Opt {
+        public static final int BOOL = 0, INT = 1, DOUBLE = 2;
+        public final String section, key;
+        /** true = regra do servidor; false = opção visual deste computador. */
+        public final boolean server;
+        public final int kind;
+        public final double min, max;
+        public final Object def;
+        public final ForgeConfigSpec.ConfigValue<?> value;
+
+        Opt(String section, String key, boolean server, int kind, double min, double max, Object def,
+            ForgeConfigSpec.ConfigValue<?> value) {
+            this.section = section; this.key = key; this.server = server;
+            this.kind = kind; this.min = min; this.max = max; this.def = def; this.value = value;
+        }
+
+        public String sectionKey() { return "config." + ChronoBubbleMod.MODID + "." + section; }
+        public String labelKey() { return sectionKey() + "." + key; }
+        public String tooltipKey() { return labelKey() + ".tooltip"; }
+        public ForgeConfigSpec spec() { return server ? SERVER_SPEC : CLIENT_SPEC; }
+    }
+
+    private static final List<Opt> ALL = new ArrayList<>();
+    /** Todas as opções, na ordem em que aparecem na tela. */
+    public static final List<Opt> OPTS = Collections.unmodifiableList(ALL);
+    private static String curSection = "";
+    private static boolean curServer;
+
+    private static void section(ForgeConfigSpec.Builder b, String key, boolean server, String comment) {
+        b.comment(comment).push(key);
+        curSection = key;
+        curServer = server;
+    }
+
+    private static ForgeConfigSpec.BooleanValue bool(ForgeConfigSpec.Builder b, String key, String comment, boolean def) {
+        ForgeConfigSpec.BooleanValue v = b.comment(comment).define(key, def);
+        ALL.add(new Opt(curSection, key, curServer, Opt.BOOL, 0, 1, def, v));
+        return v;
+    }
+
+    private static ForgeConfigSpec.IntValue integer(ForgeConfigSpec.Builder b, String key, String comment, int def, int min, int max) {
+        ForgeConfigSpec.IntValue v = b.comment(comment).defineInRange(key, def, min, max);
+        ALL.add(new Opt(curSection, key, curServer, Opt.INT, min, max, def, v));
+        return v;
+    }
+
+    private static ForgeConfigSpec.DoubleValue dbl(ForgeConfigSpec.Builder b, String key, String comment, double def, double min, double max) {
+        ForgeConfigSpec.DoubleValue v = b.comment(comment).defineInRange(key, def, min, max);
+        ALL.add(new Opt(curSection, key, curServer, Opt.DOUBLE, min, max, def, v));
+        return v;
+    }
+
+    /** Valor decimal como float (a maior parte do jogo usa float). */
+    public static float f(ForgeConfigSpec.DoubleValue v) {
+        return v.get().floatValue();
+    }
+
+    public static final ForgeConfigSpec SERVER_SPEC;
+    public static final ForgeConfigSpec CLIENT_SPEC;
+
+%FIELDS%
+
+    static {
+%BODY%
+    }
+
+    /** Registra os dois arquivos (chamado no construtor do mod). */
+    public static void register() {
+        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, SERVER_SPEC, ChronoBubbleMod.MODID + "-server.toml");
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC, ChronoBubbleMod.MODID + "-client.toml");
+    }
+}
