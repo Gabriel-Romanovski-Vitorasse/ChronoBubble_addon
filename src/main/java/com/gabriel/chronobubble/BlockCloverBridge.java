@@ -208,6 +208,9 @@ public class BlockCloverBridge {
      * o que parou de funcionar (antes as falhas eram silenciosas).
      */
     public static void logStatus() {
+        String version = ModList.get().getModContainerById(ChronoBubbleMod.MODID)
+                .map(c -> c.getModInfo().getVersion().toString()).orElse("?");
+        LOGGER.info("[ChronoBubble] vers\u00e3o {} (socos tratados no evento de ataque)", version);
         if (!ModList.get().isLoaded(MOD_ID)) {
             LOGGER.warn("[ChronoBubble] Block Clover nao esta instalado: so a parte visual do addon vai funcionar.");
             return;

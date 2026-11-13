@@ -28,7 +28,7 @@ import java.util.UUID;
  */
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TimeStealFix {
-    /** Diagnóstico: logs/debug.log, procure por "[ChronoBubble/TimeSteal]". */
+    /** Diagnóstico: latest.log, procure por "[ChronoBubble/TimeSteal]". */
     private static final org.apache.logging.log4j.Logger LOG = org.apache.logging.log4j.LogManager.getLogger();
 
     private static final class Before {
@@ -53,7 +53,7 @@ public class TimeStealFix {
         if (!BlockCloverBridge.isStealPunchActive(player)) return;
         PENDING.put(player.getUUID(), new Before(BlockCloverBridge.getTime(player), BlockCloverBridge.getMana(player),
                 (LivingEntity) event.getTarget()));
-        LOG.debug("[ChronoBubble/TimeSteal] soco armado atacou {}: Time {}, mana {}", event.getTarget().getName().getString(),
+        LOG.info("[ChronoBubble/TimeSteal] soco armado atacou {}: Time {}, mana {}", event.getTarget().getName().getString(),
                 BlockCloverBridge.getTime(player), BlockCloverBridge.getMana(player));
     }
 
@@ -86,7 +86,7 @@ public class TimeStealFix {
     private static boolean apply(ServerPlayerEntity player, Before b, float damage) {
         float manaNow = BlockCloverBridge.getMana(player);
         int timeNow = BlockCloverBridge.getTime(player);
-        LOG.debug("[ChronoBubble/TimeSteal] depois do soco em {}: mana {} -> {}, Time {} -> {}, dano {}",
+        LOG.info("[ChronoBubble/TimeSteal] depois do soco em {}: mana {} -> {}, Time {} -> {}, dano {}",
                 b.target.getName().getString(), b.mana, manaNow, b.time, timeNow, damage);
         if (b.time < 0 || !(manaNow < b.mana - 1.0F)) return false;            // o soco não foi consumido
         int fixed = ChronoConfig.STEAL_PUNCH_GAIN.get();
@@ -103,7 +103,7 @@ public class TimeStealFix {
         BlockCloverBridge.setTime(player, b.time);                              // o Time também vem aos poucos
         BlockCloverBridge.syncToClient(player);
         TimeRot.start(b.target, player, damage, gain, delay);
-        LOG.debug("[ChronoBubble/TimeSteal] apodrecimento começou: {} de dano e {} de Time em {} ticks", damage, gain, delay);
+        LOG.info("[ChronoBubble/TimeSteal] apodrecimento começou: {} de dano e {} de Time em {} ticks", damage, gain, delay);
         return true;
     }
 }

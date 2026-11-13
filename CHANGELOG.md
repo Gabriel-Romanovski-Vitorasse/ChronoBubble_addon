@@ -1,6 +1,13 @@
 # Changelog
 
-## 1.1.0 (não lançado)
+## 1.2.0 (não lançado)
+
+- Versão nova para ser fácil saber qual `.jar` está instalado: o nome passa a ser `chrono_bubble-1.16.5-1.2.0.jar` e o log
+  de inicialização mostra a versão.
+- Diagnóstico dos socos (Chrono Stasis e Time Steal) no `latest.log`, com os marcadores `[ChronoBubble/Tempo]`,
+  `[ChronoBubble/TimeSteal]` e `[ChronoBubble] ... usado`.
+
+## 1.1.0
 
 ### Adicionado
 - **Soco do Time Steal com apodrecimento**: o roubo não acontece mais na hora. Durante alguns segundos (padrão 3 s)
