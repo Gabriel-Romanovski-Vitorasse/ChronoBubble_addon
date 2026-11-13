@@ -102,10 +102,16 @@ public final class ChronoConfig {
     public static final ForgeConfigSpec.DoubleValue STEAL_MANA_COST;
     public static final ForgeConfigSpec.IntValue STEAL_EXPERIENCE;
     public static final ForgeConfigSpec.DoubleValue STEAL_DRAIN_HP;
-    public static final ForgeConfigSpec.IntValue STEAL_PUNCH_GAIN;
     public static final ForgeConfigSpec.DoubleValue STEAL_TIME_PER_HP;
-    public static final ForgeConfigSpec.DoubleValue STEAL_PUNCH_DELAY;
-    public static final ForgeConfigSpec.BooleanValue STEAL_ROT_SLOW;
+    public static final ForgeConfigSpec.BooleanValue ROT_STEAL_ENABLED;
+    public static final ForgeConfigSpec.DoubleValue ROT_STEAL_REACH;
+    public static final ForgeConfigSpec.DoubleValue ROT_STEAL_MANA_COST;
+    public static final ForgeConfigSpec.DoubleValue ROT_STEAL_DAMAGE;
+    public static final ForgeConfigSpec.IntValue ROT_STEAL_TIME_GAIN;
+    public static final ForgeConfigSpec.DoubleValue ROT_STEAL_DURATION;
+    public static final ForgeConfigSpec.IntValue ROT_STEAL_COOLDOWN_TICKS;
+    public static final ForgeConfigSpec.BooleanValue ROT_STEAL_SLOW;
+    public static final ForgeConfigSpec.BooleanValue ROT_STEAL_REQUIRE_COMBAT;
     public static final ForgeConfigSpec.BooleanValue SUSTAIN_ENABLED;
     public static final ForgeConfigSpec.IntValue SUSTAIN_MAX_TARGETS;
     public static final ForgeConfigSpec.DoubleValue SUSTAIN_MANA_PER_SECOND;
@@ -232,10 +238,19 @@ public final class ChronoConfig {
         STEAL_MANA_COST = dbl(s, "mana_cost", "Mana gasta por arremesso", 15.0, 0.0, 1000.0);
         STEAL_EXPERIENCE = integer(s, "experience", "Experi\u00eancia da habilidade ganha por arremesso", 15, 0, 10000);
         STEAL_DRAIN_HP = dbl(s, "drain_hp", "Vida m\u00e1xima drenada por acerto (2 = 1 cora\u00e7\u00e3o)", 10.0, 0.5, 1000.0);
-        STEAL_PUNCH_GAIN = integer(s, "punch_fixed_gain", "Time ganho a cada soco do Time Steal normal (sem Shift). 0 = deixa o comportamento original do mod (+10 e s\u00f3 abaixo de 1000).", 20, 0, 100000);
         STEAL_TIME_PER_HP = dbl(s, "time_per_hp", "Time ganho por ponto de vida drenado", 3.0, 0.0, 1000.0);
-        STEAL_PUNCH_DELAY = dbl(s, "punch_delay_seconds", "O soco do Time Steal normal n\u00e3o rouba na hora: durante tantos segundos o alvo sente o tempo passar e apodrece, levando o dano aos poucos enquanto voc\u00ea ganha o Time aos poucos. 0 = tudo na hora, como no mod original", 3.0, 0.0, 20.0);
-        STEAL_ROT_SLOW = bool(s, "punch_rot_slow", "true = o alvo fica lento enquanto apodrece", true);
+        s.pop();
+
+        section(s, "rot_steal", true, "Time Steal apodrecedor: Alt + Time Steal. No lugar do Time Steal original, o alvo na sua mira come\u00e7a a apodrecer: durante alguns segundos leva o dano aos poucos enquanto voc\u00ea ganha o Time aos poucos. Sem Alt, o Time Steal \u00e9 o do Block Clover.");
+        ROT_STEAL_ENABLED = bool(s, "enabled", "Liga/desliga o Alt + Time Steal", true);
+        ROT_STEAL_REACH = dbl(s, "reach", "Dist\u00e2ncia m\u00e1xima do alvo na mira", 5.0, 1.0, 16.0);
+        ROT_STEAL_MANA_COST = dbl(s, "mana_cost", "Mana gasta por uso (precisa ter MAIS que isso)", 15.0, 0.0, 1000.0);
+        ROT_STEAL_DAMAGE = dbl(s, "damage", "Dano total ao longo do apodrecimento (2 = 1 cora\u00e7\u00e3o). A armadura vale", 8.0, 0.5, 1000.0);
+        ROT_STEAL_TIME_GAIN = integer(s, "time_gain", "Time total ganho ao longo do apodrecimento", 20, 0, 100000);
+        ROT_STEAL_DURATION = dbl(s, "duration_seconds", "Quanto tempo o alvo apodrece", 3.0, 0.5, 20.0);
+        ROT_STEAL_COOLDOWN_TICKS = integer(s, "cooldown_ticks", "Recarga em ticks (20 = 1 segundo)", 60, 0, 6000);
+        ROT_STEAL_SLOW = bool(s, "slow", "true = o alvo fica lento enquanto apodrece", true);
+        ROT_STEAL_REQUIRE_COMBAT = bool(s, "require_combat_bar", "true = s\u00f3 funciona com a combat bar ativa", true);
         s.pop();
 
         section(s, "sustained", true, "Chrono Stasis sustentado: Alt + Shift + Chrono Stasis (a tecla Alt pode ser trocada nos Controles)");
