@@ -91,10 +91,7 @@ Os sons ficam em `src/main/resources/assets/chrono_bubble/sounds/` e são ligado
 |---|---|---|
 | `stasis_start` | o tempo para (congelamento, zona, Grigora...) | `stasis_start.ogg` |
 | `stasis_end` | o tempo volta a correr | `stasis_end.ogg` |
-| `time_dissolve` | a zona desfaz um projétil | `time_dissolve.ogg` |
-
-Os três são originais, gerados do zero por `tools/sounds/make_sounds.py` (um brilho agudo que desliza, com sopro e
-eco), sem áudio de terceiros.
+| `time_dissolve` | a zona desfaz um projétil | `stasis_end.ogg`, mais agudo |
 
 Para trocar: coloque o novo arquivo `.ogg` (Ogg Vorbis, de preferência mono) na pasta `sounds/` e mude o `"name"` do
 evento no `sounds.json` (por exemplo `"chrono_bubble:meu_som"` para `sounds/meu_som.ogg`). Não precisa mexer no código.
