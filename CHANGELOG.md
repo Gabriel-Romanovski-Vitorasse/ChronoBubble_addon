@@ -3,6 +3,11 @@
 ## 1.1.0 (não lançado)
 
 ### Adicionado
+- **Tempo avançado no fim do Chrono Stasis**: quando o Chrono Stasis normal (soco do Block Clover ou esfera
+  arremessada comum) acaba sozinho, o tempo do alvo salta à frente. Quem congelou paga Time pela vida dele (padrão:
+  3 Time por ponto de vida): se o Time cobre a vida toda, o alvo envelhece até virar pó; se não, leva o dano que o Time
+  pagou. Ignora armadura. Vale para mobs e jogadores (opção para desligar em PvP); Wither e Ender Dragon levam no
+  máximo 20% da vida e nunca morrem por isso. O sustentado, o Grigora e o Time Hop não envelhecem. Seção `aging`.
 - **A zona acelera o tempo dos projéteis parados**, como no anime: depois de 2 s parado, o projétil se desfaz em
   partículas, sem dano e sem item. Enquanto isso, a faixa do orbe em volta dele gira cada vez mais rápido e, no fim,
   a bolha encolhe e pisca. Tridentes nunca se desfazem (são itens de jogador); flechas comuns, conforme a config.

@@ -152,7 +152,10 @@ public class ChronoThrowHandler {
             return;
         }
 
-        if (!player.isShiftKeyDown()) return;
+        if (!player.isShiftKeyDown()) {
+            if (stasis) TimeAging.armPunch((ServerPlayerEntity) player);   // soco normal: o tempo do alvo pode avan\u00e7ar
+            return;
+        }
         try {
             event.setCanceled(true);                    // cancela o soco: aqui \u00e9 o arremesso
         } catch (Throwable t) {

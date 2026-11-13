@@ -117,6 +117,12 @@ public final class ChronoConfig {
     public static final ForgeConfigSpec.IntValue GRIGORA_TIME_COST;
     public static final ForgeConfigSpec.IntValue GRIGORA_COOLDOWN_TICKS;
     public static final ForgeConfigSpec.BooleanValue GRIGORA_SKIP_BOSSES;
+    public static final ForgeConfigSpec.BooleanValue AGING_ENABLED;
+    public static final ForgeConfigSpec.DoubleValue AGING_TIME_PER_HP;
+    public static final ForgeConfigSpec.BooleanValue AGING_FROM_PUNCH;
+    public static final ForgeConfigSpec.BooleanValue AGING_FROM_ORB;
+    public static final ForgeConfigSpec.BooleanValue AGING_PLAYERS;
+    public static final ForgeConfigSpec.DoubleValue AGING_BOSS_FRACTION;
     public static final ForgeConfigSpec.BooleanValue WITHER_ENABLED;
     public static final ForgeConfigSpec.DoubleValue WITHER_FREEZE_FRACTION;
     public static final ForgeConfigSpec.IntValue WITHER_MAX_FREEZE_TICKS;
@@ -244,6 +250,15 @@ public final class ChronoConfig {
         GRIGORA_TIME_COST = integer(s, "time_cost", "Time gasto ao ativar (precisa ter MAIS que isso)", 50, 0, 100000);
         GRIGORA_COOLDOWN_TICKS = integer(s, "cooldown_ticks", "Recarga em ticks", 200, 0, 100000);
         GRIGORA_SKIP_BOSSES = bool(s, "skip_bosses", "true = o Ender Dragon n\u00e3o \u00e9 preso. O Wither segue as regras da se\u00e7\u00e3o 'wither'", true);
+        s.pop();
+
+        section(s, "aging", true, "Quando o Chrono Stasis normal (soco do Block Clover ou esfera arremessada comum) acaba sozinho, o tempo do alvo salta \u00e0 frente. Quem congelou paga Time pela vida do alvo: se o Time cobre a vida toda, ele envelhece at\u00e9 virar p\u00f3; se n\u00e3o, leva o dano que o Time pagou. Chefes s\u00f3 levam dano. O sustentado, o Grigora e o Time Hop n\u00e3o envelhecem.");
+        AGING_ENABLED = bool(s, "enabled", "Liga/desliga o tempo avan\u00e7ado no fim do Chrono Stasis", true);
+        AGING_TIME_PER_HP = dbl(s, "time_per_hp", "Time pago por ponto de vida do alvo (2 = 1 cora\u00e7\u00e3o). Ex.: zumbi (20 de vida) = 60 de Time com o padr\u00e3o", 3.0, 0.1, 1000.0);
+        AGING_FROM_PUNCH = bool(s, "from_punch", "true = o Chrono Stasis do soco do Block Clover tamb\u00e9m avan\u00e7a o tempo", true);
+        AGING_FROM_ORB = bool(s, "from_orb", "true = a esfera arremessada comum (Shift) tamb\u00e9m avan\u00e7a o tempo", true);
+        AGING_PLAYERS = bool(s, "players", "true = jogadores tamb\u00e9m podem envelhecer at\u00e9 virar p\u00f3", true);
+        AGING_BOSS_FRACTION = dbl(s, "boss_max_fraction", "Wither e Ender Dragon levam no m\u00e1ximo esta fra\u00e7\u00e3o da vida m\u00e1xima, e nunca morrem pelo tempo avan\u00e7ado", 0.2, 0.0, 1.0);
         s.pop();
 
         section(s, "wither", true, "O Wither ignora efeitos de po\u00e7\u00e3o, ent\u00e3o o Chrono Stasis normal n\u00e3o pega nele. Com esta se\u00e7\u00e3o, Chrono Stasis (arremessado, sustentado ou Grigora) e Time Steal arremess\u00e1vel funcionam no Wither, com regras pr\u00f3prias: congelamento curto, mais curto na segunda fase, e uma resist\u00eancia ao tempo depois de cada congelamento.");

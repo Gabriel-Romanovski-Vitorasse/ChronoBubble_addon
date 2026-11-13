@@ -61,6 +61,20 @@ Shift + **Time Healing** faz voltar, em volta de você, os blocos quebrados ou e
 - Não apaga nada: se o lugar já foi ocupado por outro bloco, aquele bloco não volta.
 - Custo: Time fixo + Time por bloco + mana, com recarga (seção `restoration` da config).
 
+### Tempo avançado (fim do Chrono Stasis)
+
+Quando o Chrono Stasis normal (o soco do Block Clover ou a esfera arremessada comum) acaba sozinho, o tempo do alvo
+salta à frente e quem congelou paga Time pela vida dele:
+
+- se o seu Time cobre a vida toda, o alvo **envelhece até virar pó** (padrão: 3 Time por ponto de vida; um zumbi
+  custa 60);
+- se não cobre, ele leva o dano que o seu Time pagou;
+- ignora armadura; o totem da imortalidade ainda salva;
+- jogadores também podem envelhecer (opção `aging.players` para servidores sem PvP);
+- Wither e Ender Dragon levam no máximo 20% da vida e nunca morrem por isso;
+- se o efeito for tirado antes do fim (leite, troca para o sustentado...), nada acontece. O sustentado, o Grigora e
+  o Time Hop não envelhecem o alvo.
+
 ### Wither
 
 O Wither ignora efeitos de poção, então ganhou regras próprias (seção `wither` da config):
