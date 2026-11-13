@@ -3,6 +3,10 @@
 ## 1.1.0 (não lançado)
 
 ### Adicionado
+- **Soco do Time Steal com apodrecimento**: o roubo não acontece mais na hora. Durante alguns segundos (padrão 3 s)
+  o alvo sente o tempo passar e apodrece, com cinzas e fumaça e mais lento; a cada meio segundo ele leva uma parte do
+  dano do soco e você ganha uma parte do Time. Os totais são os mesmos de antes. Se o alvo morrer no meio, o resto se
+  perde. Opções `steal.punch_delay_seconds` (0 = na hora) e `steal.punch_rot_slow`.
 - **Tempo avançado no fim do Chrono Stasis**: quando o Chrono Stasis normal (soco do Block Clover ou esfera
   arremessada comum) acaba sozinho, o tempo do alvo salta à frente. Quem congelou paga Time pela vida dele (padrão:
   3 Time por ponto de vida): se o Time cobre a vida toda, o alvo envelhece até virar pó; se não, leva o dano que o Time

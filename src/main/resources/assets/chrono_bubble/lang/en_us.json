@@ -353,5 +353,12 @@
   "msg.chrono_bubble.aging_damage": "%s's time advanced: −%s health (−%s Time)",
   "msg.chrono_bubble.aging_no_time": "Not enough Time to advance %s's time.",
   "death.attack.chrono_aging": "%1$s aged into dust by %2$s's time",
-  "death.attack.chrono_aging.item": "%1$s aged into dust by %2$s's time using %3$s"
+  "death.attack.chrono_aging.item": "%1$s aged into dust by %2$s's time using %3$s",
+  "config.chrono_bubble.steal.punch_delay_seconds": "Punch: rotting (s, 0 = instant)",
+  "config.chrono_bubble.steal.punch_delay_seconds.tooltip": "The regular Time Steal punch does not steal instantly: for this many seconds the target feels time passing and rots, taking the damage gradually while you gain the Time gradually. 0 = all at once, like the original mod",
+  "config.chrono_bubble.steal.punch_rot_slow": "Punch: target slowed while rotting",
+  "config.chrono_bubble.steal.punch_rot_slow.tooltip": "true = the target is slowed while it rots",
+  "msg.chrono_bubble.steal_rot_done": "+%s Time stolen: the target felt time passing",
+  "death.attack.chrono_rot": "%1$s rotted away as %2$s stole their time",
+  "death.attack.chrono_rot.item": "%1$s rotted away as %2$s stole their time using %3$s"
 }

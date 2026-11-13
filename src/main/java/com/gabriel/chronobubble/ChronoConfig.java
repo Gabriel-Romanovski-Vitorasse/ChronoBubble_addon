@@ -104,6 +104,8 @@ public final class ChronoConfig {
     public static final ForgeConfigSpec.DoubleValue STEAL_DRAIN_HP;
     public static final ForgeConfigSpec.IntValue STEAL_PUNCH_GAIN;
     public static final ForgeConfigSpec.DoubleValue STEAL_TIME_PER_HP;
+    public static final ForgeConfigSpec.DoubleValue STEAL_PUNCH_DELAY;
+    public static final ForgeConfigSpec.BooleanValue STEAL_ROT_SLOW;
     public static final ForgeConfigSpec.BooleanValue SUSTAIN_ENABLED;
     public static final ForgeConfigSpec.IntValue SUSTAIN_MAX_TARGETS;
     public static final ForgeConfigSpec.DoubleValue SUSTAIN_MANA_PER_SECOND;
@@ -231,6 +233,8 @@ public final class ChronoConfig {
         STEAL_DRAIN_HP = dbl(s, "drain_hp", "Vida m\u00e1xima drenada por acerto (2 = 1 cora\u00e7\u00e3o)", 10.0, 0.5, 1000.0);
         STEAL_PUNCH_GAIN = integer(s, "punch_fixed_gain", "Time ganho a cada soco do Time Steal normal (sem Shift). 0 = deixa o comportamento original do mod (+10 e s\u00f3 abaixo de 1000).", 20, 0, 100000);
         STEAL_TIME_PER_HP = dbl(s, "time_per_hp", "Time ganho por ponto de vida drenado", 3.0, 0.0, 1000.0);
+        STEAL_PUNCH_DELAY = dbl(s, "punch_delay_seconds", "O soco do Time Steal normal n\u00e3o rouba na hora: durante tantos segundos o alvo sente o tempo passar e apodrece, levando o dano aos poucos enquanto voc\u00ea ganha o Time aos poucos. 0 = tudo na hora, como no mod original", 3.0, 0.0, 20.0);
+        STEAL_ROT_SLOW = bool(s, "punch_rot_slow", "true = o alvo fica lento enquanto apodrece", true);
         s.pop();
 
         section(s, "sustained", true, "Chrono Stasis sustentado: Alt + Shift + Chrono Stasis (a tecla Alt pode ser trocada nos Controles)");

@@ -353,5 +353,12 @@
   "msg.chrono_bubble.aging_damage": "O tempo de %s avançou: −%s de vida (−%s Time)",
   "msg.chrono_bubble.aging_no_time": "Sem Time para avançar o tempo de %s.",
   "death.attack.chrono_aging": "%1$s envelheceu até virar pó pelo tempo de %2$s",
-  "death.attack.chrono_aging.item": "%1$s envelheceu até virar pó pelo tempo de %2$s usando %3$s"
+  "death.attack.chrono_aging.item": "%1$s envelheceu até virar pó pelo tempo de %2$s usando %3$s",
+  "config.chrono_bubble.steal.punch_delay_seconds": "Soco: apodrecimento (s, 0 = na hora)",
+  "config.chrono_bubble.steal.punch_delay_seconds.tooltip": "O soco do Time Steal normal não rouba na hora: durante tantos segundos o alvo sente o tempo passar e apodrece, levando o dano aos poucos enquanto você ganha o Time aos poucos. 0 = tudo na hora, como no mod original",
+  "config.chrono_bubble.steal.punch_rot_slow": "Soco: alvo lento enquanto apodrece",
+  "config.chrono_bubble.steal.punch_rot_slow.tooltip": "true = o alvo fica lento enquanto apodrece",
+  "msg.chrono_bubble.steal_rot_done": "+%s Time roubado: o alvo sentiu o tempo passar",
+  "death.attack.chrono_rot": "%1$s apodreceu com o tempo roubado por %2$s",
+  "death.attack.chrono_rot.item": "%1$s apodreceu com o tempo roubado por %2$s usando %3$s"
 }
