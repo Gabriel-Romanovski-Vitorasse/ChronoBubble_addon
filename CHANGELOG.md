@@ -7,6 +7,8 @@
   o alvo sente o tempo passar e apodrece, com cinzas e fumaça e mais lento; a cada meio segundo ele leva uma parte do
   dano do soco e você ganha uma parte do Time. Os totais são os mesmos de antes. Se o alvo morrer no meio, o resto se
   perde. Opções `steal.punch_delay_seconds` (0 = na hora) e `steal.punch_rot_slow`.
+  O próprio modelo do alvo escurece em tom oliva/podre ao longo do apodrecimento, com um pulso a cada roubo, e volta
+  ao normal no fim (vale para mobs de qualquer mod e para jogadores; opção do cliente `visual.rot_tint`).
 - **Tempo avançado no fim do Chrono Stasis**: quando o Chrono Stasis normal (soco do Block Clover ou esfera
   arremessada comum) acaba sozinho, o tempo do alvo salta à frente. Quem congelou paga Time pela vida dele (padrão:
   3 Time por ponto de vida): se o Time cobre a vida toda, o alvo envelhece até virar pó; se não, leva o dano que o Time

@@ -360,5 +360,7 @@
   "config.chrono_bubble.steal.punch_rot_slow.tooltip": "true = the target is slowed while it rots",
   "msg.chrono_bubble.steal_rot_done": "+%s Time stolen: the target felt time passing",
   "death.attack.chrono_rot": "%1$s rotted away as %2$s stole their time",
-  "death.attack.chrono_rot.item": "%1$s rotted away as %2$s stole their time using %3$s"
+  "death.attack.chrono_rot.item": "%1$s rotted away as %2$s stole their time using %3$s",
+  "config.chrono_bubble.visual.rot_tint": "Rotting tint on Time Steal targets",
+  "config.chrono_bubble.visual.rot_tint.tooltip": "true = targets rotting from the Time Steal punch darken to an olive, rotten tint"
 }

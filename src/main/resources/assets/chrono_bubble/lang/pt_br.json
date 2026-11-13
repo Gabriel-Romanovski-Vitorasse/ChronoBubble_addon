@@ -360,5 +360,7 @@
   "config.chrono_bubble.steal.punch_rot_slow.tooltip": "true = o alvo fica lento enquanto apodrece",
   "msg.chrono_bubble.steal_rot_done": "+%s Time roubado: o alvo sentiu o tempo passar",
   "death.attack.chrono_rot": "%1$s apodreceu com o tempo roubado por %2$s",
-  "death.attack.chrono_rot.item": "%1$s apodreceu com o tempo roubado por %2$s usando %3$s"
+  "death.attack.chrono_rot.item": "%1$s apodreceu com o tempo roubado por %2$s usando %3$s",
+  "config.chrono_bubble.visual.rot_tint": "Tom apodrecido no alvo do Time Steal",
+  "config.chrono_bubble.visual.rot_tint.tooltip": "true = quem apodrece pelo soco do Time Steal fica com o corpo escurecendo em tom oliva/podre"
 }

@@ -205,6 +205,7 @@ public final class ChronoConfig {
     public static final ForgeConfigSpec.DoubleValue GRIMOIRE_HEIGHT;
     public static final ForgeConfigSpec.DoubleValue GRIMOIRE_FRONT;
     public static final ForgeConfigSpec.DoubleValue GRIMOIRE_SCALE;
+    public static final ForgeConfigSpec.BooleanValue ROT_TINT;
     public static final ForgeConfigSpec.BooleanValue SECOND_RING;
 
     static {
@@ -376,6 +377,7 @@ public final class ChronoConfig {
         GRIMOIRE_HEIGHT = dbl(c, "grimoire_height", "Altura em rela\u00e7\u00e3o aos p\u00e9s do jogador, em blocos", 1.15, 0.0, 4.0);
         GRIMOIRE_FRONT = dbl(c, "grimoire_front", "Deslocamento em blocos. Positivo = \u00e0 frente do jogador, negativo = atr\u00e1s", 0.15, -3.0, 3.0);
         GRIMOIRE_SCALE = dbl(c, "grimoire_scale", "Tamanho do grim\u00f3rio (multiplicador; 1 = normal)", 1.0, 0.2, 4.0);
+        ROT_TINT = bool(c, "rot_tint", "true = quem apodrece pelo soco do Time Steal fica com o corpo escurecendo em tom oliva/podre", true);
         SECOND_RING = bool(c, "second_ring", "true = desenha um segundo anel, mais fino, inclinado para o outro lado (o anime usa um s\u00f3)", false);
         c.pop();
         CLIENT_SPEC = c.build();

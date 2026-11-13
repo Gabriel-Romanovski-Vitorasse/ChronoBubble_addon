@@ -151,6 +151,7 @@ SECTIONS = [
  ("grimoire_height","GRIMOIRE_HEIGHT",D,1.15,0.0,4.0,"Grimório: altura (blocos)","Grimoire: height (blocks)","Altura em relação aos pés do jogador, em blocos","Height above the player's feet, in blocks"),
  ("grimoire_front","GRIMOIRE_FRONT",D,0.15,-3.0,3.0,"Grimório: frente/trás (blocos)","Grimoire: front/back (blocks)","Deslocamento em blocos. Positivo = à frente do jogador, negativo = atrás","Offset in blocks. Positive = in front of the player, negative = behind"),
  ("grimoire_scale","GRIMOIRE_SCALE",D,1.0,0.2,4.0,"Grimório: tamanho","Grimoire: size","Tamanho do grimório (multiplicador; 1 = normal)","Grimoire size (multiplier; 1 = normal)"),
+ ("rot_tint","ROT_TINT",B,True,0,1,"Tom apodrecido no alvo do Time Steal","Rotting tint on Time Steal targets","true = quem apodrece pelo soco do Time Steal fica com o corpo escurecendo em tom oliva/podre","true = targets rotting from the Time Steal punch darken to an olive, rotten tint"),
  ("second_ring","SECOND_RING",B,False,0,1,"Segundo anel de numerais","Second numeral ring","true = desenha um segundo anel, mais fino, inclinado para o outro lado (o anime usa um só)","true = draw a second, thinner ring tilted the other way (the anime uses only one)"),
 ]),
 ]

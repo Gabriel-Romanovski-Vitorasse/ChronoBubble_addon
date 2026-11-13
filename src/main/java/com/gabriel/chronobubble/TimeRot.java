@@ -71,7 +71,11 @@ public class TimeRot {
     public static void start(LivingEntity target, ServerPlayerEntity attacker, float damage, int time, int ticks) {
         if (target.level.isClientSide || !target.isAlive()) return;
         long now = target.level.getGameTime();
-        ROTS.add(new Rot(target, attacker.getUUID(), Math.max(0.0F, damage), Math.max(0, time), pulsesFor(ticks), now + PULSE_TICKS));
+        int pulses = pulsesFor(ticks);
+        ROTS.add(new Rot(target, attacker.getUUID(), Math.max(0.0F, damage), Math.max(0, time), pulses, now + PULSE_TICKS));
+        // tom apodrecido no modelo, para quem v\u00ea o alvo (e para ele mesmo, se for jogador)
+        ChronoBubbleMod.CHANNEL.send(net.minecraftforge.fml.network.PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> target),
+                new RotPacket(target.getId(), pulses * PULSE_TICKS));
         target.level.playSound(null, target.getX(), target.getY(), target.getZ(), ChronoBubbleMod.STASIS_END.get(),
                 SoundCategory.PLAYERS, 0.7F, 0.45F);
         rotParticles(target, 18);

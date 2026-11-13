@@ -25,7 +25,7 @@ public class ChronoBubbleMod {
      * Cliente e servidor precisam ter o addon na MESMA vers\u00e3o: quem n\u00e3o tiver (ou tiver outra) \u00e9 recusado ao
      * entrar, com uma mensagem clara, em vez de entrar e receber pacotes que n\u00e3o entende.
      */
-    private static final String PROTOCOL = "2";
+    private static final String PROTOCOL = "3";
 
     /** Canal usado para o servidor avisar os clientes de quem est\u00e1 congelado. */
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -69,6 +69,7 @@ public class ChronoBubbleMod {
         CHANNEL.registerMessage(8, PrecogPacket.class, PrecogPacket::encode, PrecogPacket::decode, PrecogPacket::handle);
         CHANNEL.registerMessage(9, AccelTogglePacket.class, AccelTogglePacket::encode, AccelTogglePacket::decode, AccelTogglePacket::handle);
         CHANNEL.registerMessage(10, HopGhostPacket.class, HopGhostPacket::encode, HopGhostPacket::decode, HopGhostPacket::handle);
+        CHANNEL.registerMessage(11, RotPacket.class, RotPacket::encode, RotPacket::decode, RotPacket::handle);
         ChronoThrowHandler.register();
         MinecraftForge.EVENT_BUS.register(ChronoZone.INSTANCE);         // habilidades com mana por segundo
         MinecraftForge.EVENT_BUS.register(TimeAcceleration.INSTANCE);
