@@ -129,6 +129,7 @@ public class WitherStasis {
             if (w.level.getGameTime() >= f.until) {
                 it.remove();
                 release(w, true);
+                TimeAging.onBossFreezeEnded(w);                             // acabou sozinho: o tempo dele avan\u00e7a
                 continue;
             }
             // parado no lugar (sem IA ele não atira nem voa, mas empurrões ainda o moveriam)

@@ -20,8 +20,10 @@
   "time_dissolve": {
     "sounds": [
       {
-        "name": "chrono_bubble:time_dissolve",
-        "stream": false
+        "name": "chrono_bubble:stasis_end",
+        "stream": false,
+        "pitch": 1.8,
+        "volume": 0.7
       }
     ],
     "subtitle": "chrono_bubble.subtitle.time_dissolve"

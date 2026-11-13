@@ -74,9 +74,12 @@ public class StasisOrbEntity extends ThrowableEntity {
         if (!steal && !sustained && target instanceof net.minecraft.entity.boss.WitherEntity) {
             // o Wither ignora efeitos de po\u00e7\u00e3o: congelamento pr\u00f3prio, curto, com resist\u00eancia ao tempo
             if (WitherStasis.applies(target)) {
-                WitherStasis.freeze((net.minecraft.entity.boss.WitherEntity) target,
-                        (int) Math.round(ChronoConfig.THROW_FREEZE_SECONDS.get() * 20.0D),
-                        getOwner() instanceof net.minecraft.entity.player.PlayerEntity ? (net.minecraft.entity.player.PlayerEntity) getOwner() : null);
+                net.minecraft.entity.player.PlayerEntity caster = getOwner() instanceof net.minecraft.entity.player.PlayerEntity
+                        ? (net.minecraft.entity.player.PlayerEntity) getOwner() : null;
+                if (WitherStasis.freeze((net.minecraft.entity.boss.WitherEntity) target,
+                        (int) Math.round(ChronoConfig.THROW_FREEZE_SECONDS.get() * 20.0D), caster)) {
+                    TimeAging.markOrb(target, caster);                       // chefe: s\u00f3 leva dano no fim
+                }
             }
             return;
         }
@@ -90,6 +93,9 @@ public class StasisOrbEntity extends ThrowableEntity {
         }
         if (!target.hasEffect(effect)) {
             target.addEffect(new EffectInstance(effect, (int) Math.round(ChronoConfig.THROW_FREEZE_SECONDS.get() * 20.0D)));
+            if (target.hasEffect(effect) && getOwner() instanceof net.minecraft.entity.player.PlayerEntity) {
+                TimeAging.markOrb(target, (net.minecraft.entity.player.PlayerEntity) getOwner());   // tempo avan\u00e7a no fim
+            }
         }
     }
 

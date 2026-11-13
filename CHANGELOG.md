@@ -3,13 +3,18 @@
 ## 1.1.0 (não lançado)
 
 ### Adicionado
+- **Tempo avançado no fim do Chrono Stasis**: quando o Chrono Stasis normal (soco do Block Clover ou esfera
+  arremessada comum) acaba sozinho, o tempo do alvo salta à frente. Quem congelou paga Time pela vida dele (padrão:
+  3 Time por ponto de vida): se o Time cobre a vida toda, o alvo envelhece até virar pó; se não, leva o dano que o Time
+  pagou. Ignora armadura. Vale para mobs e jogadores (opção para desligar em PvP); Wither e Ender Dragon levam no
+  máximo 20% da vida e nunca morrem por isso. O sustentado, o Grigora e o Time Hop não envelhecem. Seção `aging`.
 - **A zona acelera o tempo dos projéteis parados**, como no anime: depois de 2 s parado, o projétil se desfaz em
   partículas, sem dano e sem item. Enquanto isso, a faixa do orbe em volta dele gira cada vez mais rápido e, no fim,
   a bolha encolhe e pisca. Tridentes nunca se desfazem (são itens de jogador); flechas comuns, conforme a config.
   Opções `zone.dissolve_seconds` (0 = comportamento antigo), `zone.dissolve_mana` e `zone.dissolve_arrows`.
-- **Sons novos**, originais e gerados do zero (`tools/sounds/make_sounds.py`), no estilo das magias de tempo: um
-  brilho agudo que desliza (desce quando o tempo para, sobe quando volta), com sopro e eco, e um brilho curto com
-  "puff" para o projétil que se desfaz (evento próprio `time_dissolve`).
+- Som próprio para o projétil desfeito (`time_dissolve`), por enquanto o mesmo arquivo do fim do Chrono Stasis, mais
+  agudo, para poder ser trocado depois sem mexer no código. (Os sons "brilho que desliza" testados foram retirados:
+  os sons originais do addon ficaram.)
 - **Magias de tempo no Wither**, com regras de chefe. O Wither ignora efeitos de poção, então o Chrono Stasis do Block
   Clover nunca pegava nele. Agora a esfera arremessada (normal ou sustentada) e o Grigora o congelam com um
   congelamento próprio: só 30% do tempo normal (máximo 3 s), metade disso na segunda fase, e 15 s de "resistência ao

@@ -61,6 +61,20 @@ Shift + **Time Healing** faz voltar, em volta de você, os blocos quebrados ou e
 - Não apaga nada: se o lugar já foi ocupado por outro bloco, aquele bloco não volta.
 - Custo: Time fixo + Time por bloco + mana, com recarga (seção `restoration` da config).
 
+### Tempo avançado (fim do Chrono Stasis)
+
+Quando o Chrono Stasis normal (o soco do Block Clover ou a esfera arremessada comum) acaba sozinho, o tempo do alvo
+salta à frente e quem congelou paga Time pela vida dele:
+
+- se o seu Time cobre a vida toda, o alvo **envelhece até virar pó** (padrão: 3 Time por ponto de vida; um zumbi
+  custa 60);
+- se não cobre, ele leva o dano que o seu Time pagou;
+- ignora armadura; o totem da imortalidade ainda salva;
+- jogadores também podem envelhecer (opção `aging.players` para servidores sem PvP);
+- Wither e Ender Dragon levam no máximo 20% da vida e nunca morrem por isso;
+- se o efeito for tirado antes do fim (leite, troca para o sustentado...), nada acontece. O sustentado, o Grigora e
+  o Time Hop não envelhecem o alvo.
+
 ### Wither
 
 O Wither ignora efeitos de poção, então ganhou regras próprias (seção `wither` da config):
@@ -91,10 +105,7 @@ Os sons ficam em `src/main/resources/assets/chrono_bubble/sounds/` e são ligado
 |---|---|---|
 | `stasis_start` | o tempo para (congelamento, zona, Grigora...) | `stasis_start.ogg` |
 | `stasis_end` | o tempo volta a correr | `stasis_end.ogg` |
-| `time_dissolve` | a zona desfaz um projétil | `time_dissolve.ogg` |
-
-Os três são originais, gerados do zero por `tools/sounds/make_sounds.py` (um brilho agudo que desliza, com sopro e
-eco), sem áudio de terceiros.
+| `time_dissolve` | a zona desfaz um projétil | `stasis_end.ogg`, mais agudo |
 
 Para trocar: coloque o novo arquivo `.ogg` (Ogg Vorbis, de preferência mono) na pasta `sounds/` e mude o `"name"` do
 evento no `sounds.json` (por exemplo `"chrono_bubble:meu_som"` para `sounds/meu_som.ogg`). Não precisa mexer no código.

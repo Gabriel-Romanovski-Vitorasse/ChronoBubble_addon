@@ -35,8 +35,8 @@ public class ChronoBubbleMod {
     public static final RegistryObject<SoundEvent> STASIS_START = SOUNDS.register("stasis_start",
             () -> new SoundEvent(new ResourceLocation(MODID, "stasis_start")));
     /**
-     * Proj\u00e9til desfeito pela zona (tempo acelerado): sounds/time_dissolve.ogg. Para trocar, substitua o arquivo ou
-     * aponte "time_dissolve" no sounds.json para outro .ogg.
+     * Proj\u00e9til desfeito pela zona (tempo acelerado). Usa o som de stasis_end mais agudo (sounds.json); para trocar,
+     * ponha um .ogg em assets/chrono_bubble/sounds/ e aponte "time_dissolve" para ele.
      */
     public static final RegistryObject<SoundEvent> TIME_DISSOLVE = SOUNDS.register("time_dissolve",
             () -> new SoundEvent(new ResourceLocation(MODID, "time_dissolve")));
