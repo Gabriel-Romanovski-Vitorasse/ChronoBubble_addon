@@ -1,38 +1,22 @@
 """Uso: python3 tools/sounds/make_sounds.py <pasta de saída>
 
-Gera, do zero (síntese com NumPy, sem nenhum áudio de terceiros), os sons do Chrono Bubble em Ogg Vorbis mono:
-  stasis_start.ogg   o tempo para: whoosh subindo, tique-taques desacelerando, sino cristalino com eco
-  stasis_end.ogg     o tempo volta: sino invertido crescendo, tique-taques acelerando
-  time_dissolve.ogg  projétil se desfazendo: tique-taques acelerando até virar brilho e um "puff"
-Precisa do ffmpeg (com libvorbis) para converter de WAV para OGG.
+Gera, do zero (síntese com NumPy, sem nenhum áudio de terceiros), os sons do Chrono Bubble em Ogg Vorbis mono.
+Estilo "brilho que desliza", baseado em características medidas de referência (não em áudio copiado): muitas
+parciais agudas (4-9 kHz) com tremor deslizando de frequência, um sopro de ruído filtrado por baixo e eco.
+  stasis_start.ogg   o tempo para: o brilho desce (~7 -> 4 kHz) por ~1,2 s
+  stasis_end.ogg     o tempo volta: o brilho sobe, crescendo, e corta no fim
+  time_dissolve.ogg  projétil se desfazendo: brilho curto subindo e um "puff"
+O resultado é sempre o mesmo (sementes fixas). Precisa do ffmpeg (com libvorbis) para converter de WAV para OGG.
 """
 import os, sys, wave, subprocess, tempfile
 import numpy as np
 
 SR = 44100
-rng = np.random.default_rng(7)          # fixo: o resultado é sempre o mesmo
+rng = np.random.default_rng(11)        # fixo: o resultado é sempre o mesmo
 
 
 def t_axis(sec):
     return np.arange(int(SR * sec)) / SR
-
-
-def bell(freq, sec, decay=1.6):
-    """Sino com parciais inarmônicas (soa metálico/cristalino)."""
-    t = t_axis(sec)
-    out = np.zeros_like(t)
-    for ratio, amp, dk in ((1.0, 1.0, 1.0), (2.76, 0.55, 1.6), (5.40, 0.30, 2.4), (8.93, 0.18, 3.5), (13.3, 0.08, 5.0)):
-        out += amp * np.sin(2 * np.pi * freq * ratio * t) * np.exp(-t * decay * dk)
-    attack = np.minimum(1.0, t / 0.004)
-    return out * attack
-
-
-def tick(freq=2600.0, sec=0.035):
-    """Tique de relógio: estalo curto e metálico."""
-    t = t_axis(sec)
-    click = np.sin(2 * np.pi * freq * t) * np.exp(-t * 180) + 0.5 * np.sin(2 * np.pi * freq * 1.9 * t) * np.exp(-t * 260)
-    noise = rng.standard_normal(len(t)) * np.exp(-t * 500) * 0.3
-    return click + noise
 
 
 def lowpass_sweep(x, f_from, f_to):
@@ -76,16 +60,6 @@ def place(dst, src, at_sec, gain=1.0):
     dst[i:j] += gain * src[: j - i]
 
 
-def ticks_schedule(start, first_gap, factor, count):
-    """Momentos dos tiques: cada intervalo multiplica o anterior (factor > 1 desacelera, < 1 acelera)."""
-    times, t, gap = [], start, first_gap
-    for _ in range(count):
-        times.append(t)
-        t += gap
-        gap *= factor
-    return times
-
-
 def normalize(x, peak=0.85):
     x = x - np.mean(x)
     fade = np.minimum(1.0, (len(x) - np.arange(len(x))) / (0.03 * SR))   # sem estalo no fim
@@ -93,41 +67,56 @@ def normalize(x, peak=0.85):
     return x / (np.max(np.abs(x)) + 1e-9) * peak
 
 
-def stasis_start():
-    out = np.zeros(int(SR * 1.5))          # cabe o sino inteiro (começa em 0,42 s e dura 1 s)
-    whoosh = lowpass_sweep(rng.standard_normal(int(SR * 0.45)), 300, 6000) * np.hanning(int(SR * 0.45)) * 0.9
-    place(out, whoosh, 0.0)
-    for k, t in enumerate(ticks_schedule(0.05, 0.06, 1.35, 6)):          # relógio desacelerando até parar
-        place(out, tick(2600 - 120 * k), t, 0.55 * (1 - 0.1 * k))
-    chord = bell(880, 1.0) + 0.7 * bell(1318.5, 1.0) + 0.45 * bell(1760, 1.0, 2.2)
-    place(out, chord, 0.42, 0.55)
-    return normalize(reverb(out, 0.35, 0.6))
+def shimmer(sec, f_from, f_to, n=40, spread=0.45):
+    """Brilho aéreo: muitas parciais agudas com tremor, deslizando de f_from para f_to."""
+    t = t_axis(sec)
+    glide = np.geomspace(1.0, f_to / f_from, len(t))
+    out = np.zeros_like(t)
+    for _ in range(n):
+        base = f_from * rng.uniform(1 - spread, 1 + spread)
+        freq = base * glide
+        phase = 2 * np.pi * np.cumsum(freq) / SR
+        trem = 0.55 + 0.45 * np.sin(2 * np.pi * rng.uniform(9, 23) * t + rng.uniform(0, 6.3))
+        out += np.sin(phase + rng.uniform(0, 6.3)) * trem * rng.uniform(0.3, 1.0)
+    return out / n
 
+def air(sec, f_from, f_to):
+    return lowpass_sweep(rng.standard_normal(int(SR * sec)), f_from, f_to) - lowpass_sweep(rng.standard_normal(int(SR * sec)), f_from * 0.25, f_to * 0.25) * 0.6
+
+def rms(x):
+    return np.sqrt(np.mean(x ** 2)) + 1e-9
+
+def mix(shim, airy, air_ratio):
+    """Junta brilho e sopro com o sopro em air_ratio da energia do brilho (senão o chiado cobre tudo)."""
+    return shim / rms(shim) + airy / rms(airy) * air_ratio
+
+def env(sec, attack, release_pow=1.5):
+    t = t_axis(sec); a = np.minimum(1, t / attack)
+    return a * (1 - t / sec) ** release_pow
+
+def stasis_start():
+    sec = 1.25
+    s = mix(shimmer(sec, 7000, 3800) * env(sec, 0.03), air(sec, 9000, 2500) * env(sec, 0.02, 2.2), 0.25)
+    out = np.zeros(int(SR * 1.6)); place(out, s, 0.0)
+    return normalize(reverb(out, 0.3, 0.6))
 
 def stasis_end():
-    chord = bell(880, 0.7) + 0.7 * bell(1318.5, 0.7) + 0.45 * bell(1760, 0.7, 2.2)
-    rev = chord[::-1] * 0.5                                                 # sino invertido: cresce até o tempo voltar
-    out = np.zeros(int(SR * 1.1))
-    place(out, rev, 0.0)
-    for k, t in enumerate(ticks_schedule(0.62, 0.11, 0.72, 7)):          # relógio acelerando de volta
-        place(out, tick(2200 + 100 * k), t, 0.5)
-    whoosh = lowpass_sweep(rng.standard_normal(int(SR * 0.3)), 5000, 400) * np.hanning(int(SR * 0.3)) * 0.5
-    place(out, whoosh, 0.62)
+    sec = 1.0
+    t = t_axis(sec)
+    swell = np.minimum(1, t / (sec * 0.85)) ** 2 * np.minimum(1, (sec - t) / 0.08)
+    s = mix(shimmer(sec, 3600, 6800) * swell, air(sec, 2000, 9000) * swell, 0.25)
+    out = np.zeros(int(SR * 1.3)); place(out, s, 0.0)
     return normalize(reverb(out, 0.25, 0.4))
 
-
 def time_dissolve():
-    out = np.zeros(int(SR * 0.75))
-    for k, t in enumerate(ticks_schedule(0.0, 0.07, 0.78, 14)):          # tempo acelerando muito
-        place(out, tick(2600 + 160 * k, 0.025), t, 0.45)
-    sparkle = np.zeros(int(SR * 0.4))
-    for f in (3520, 4186, 5274, 6272):                                      # brilho agudo
-        sparkle += bell(f, 0.4, 6.0) * rng.uniform(0.5, 1.0)
-    place(out, sparkle, 0.30, 0.35)
-    puff = lowpass_sweep(rng.standard_normal(int(SR * 0.2)), 3000, 200) * np.exp(-t_axis(0.2) * 18)
-    place(out, puff, 0.30, 0.9)
+    sec = 0.55
+    t = t_axis(sec)
+    s = shimmer(sec, 5200, 9000, n=30) * env(sec, 0.01, 1.2)
+    s = s / rms(s)
+    puff = lowpass_sweep(rng.standard_normal(int(SR * 0.25)), 4000, 300) * np.exp(-t_axis(0.25) * 14)
+    puff = puff / rms(puff) * 0.35
+    out = np.zeros(int(SR * 0.8)); place(out, s, 0.0); place(out, puff, 0.32)
     return normalize(reverb(out, 0.25, 0.3), 0.75)
-
 
 def save_ogg(x, path):
     with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:

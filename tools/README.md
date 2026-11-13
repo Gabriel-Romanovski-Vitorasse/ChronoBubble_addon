@@ -8,7 +8,7 @@ Scripts de apoio (Python 3). Não fazem parte do `.jar`.
 | `textures/make_ring.py` | gera `textures/effect/ring.png` (faixa de numerais do Chrono Stasis) | Pillow, fonte DejaVu Serif Bold |
 | `textures/make_sphere.py` | gera `textures/effect/sphere.png` (branca: a cor vem do código) | Pillow |
 | `textures/preview.py` | prévia da bolha fora do jogo, com a mesma conta do `StasisBubbleRenderer` | Pillow, NumPy |
-| `sounds/make_sounds.py` | gera sons originais (síntese, sem áudio de terceiros) para `stasis_start`, `stasis_end` e `time_dissolve` | NumPy, ffmpeg com libvorbis |
+| `sounds/make_sounds.py` | gera os sons do mod (síntese, sem áudio de terceiros): `stasis_start`, `stasis_end` e `time_dissolve` | NumPy, ffmpeg com libvorbis |
 
 Rode da raiz do repositório:
 
