@@ -85,6 +85,9 @@
 - A esfera piscando (tempo instável) só aparecia para quem já estava por perto.
 - A esfera de Time Steal ou sustentada voltava como esfera comum ao recarregar o mundo.
 - Mensagens do Time Hop reformulado não eram traduzíveis.
+- O tempo avançado não acontecia no **soco** do Chrono Stasis: o soco do Block Clover usa uma fonte de dano própria e
+  não conta como "último alvo atacado" do jogador, que era o que o addon conferia. Agora o addon anota ele mesmo quem
+  feriu cada alvo.
 - Os efeitos extras do Time Hop (sem dano de queda, chegada protegida, pulso, bolha fantasma) nunca disparavam:
   o addon escutava tanto o `AbilityUseEvent.Pre` quanto o `.Post` do Block Clover, e o `Post` chegava com o jogador
   já teleportado, apagando o ponto de partida. Agora o `Post` é ignorado. (Uma primeira versão dessa correção
