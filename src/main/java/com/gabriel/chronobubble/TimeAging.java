@@ -47,7 +47,7 @@ import java.util.UUID;
  */
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TimeAging {
-    /** Diagnóstico: cada etapa vai para logs/debug.log (procure por "[ChronoBubble/Tempo]"). */
+    /** Diagnóstico: cada etapa vai para o latest.log (procure por "[ChronoBubble/Tempo]"). */
     private static final org.apache.logging.log4j.Logger LOG = org.apache.logging.log4j.LogManager.getLogger();
 
     /** Quanto tempo depois de armar o soco ele ainda conta (o soco do Block Clover fica "armado" até acertar). */
@@ -82,14 +82,14 @@ public class TimeAging {
     /** O jogador usou o Chrono Stasis sem Shift/Alt: o soco está armado. */
     public static void armPunch(ServerPlayerEntity player) {
         PUNCH_ARMED.put(player.getUUID(), player.level.getGameTime());
-        LOG.debug("[ChronoBubble/Tempo] soco do Chrono Stasis armado por {} (tick {})", player.getName().getString(), player.level.getGameTime());
+        LOG.info("[ChronoBubble/Tempo] soco do Chrono Stasis armado por {} (tick {})", player.getName().getString(), player.level.getGameTime());
     }
 
     /** A esfera arremessada comum congelou {@code target}. */
     public static void markOrb(LivingEntity target, PlayerEntity caster) {
         if (!ChronoConfig.AGING_ENABLED.get() || !ChronoConfig.AGING_FROM_ORB.get() || caster == null) return;
         MARKED.put(target.getUUID(), caster.getUUID());
-        LOG.debug("[ChronoBubble/Tempo] esfera marcou {} (por {})", target.getName().getString(), caster.getName().getString());
+        LOG.info("[ChronoBubble/Tempo] esfera marcou {} (por {})", target.getName().getString(), caster.getName().getString());
     }
 
     /**
@@ -103,7 +103,7 @@ public class TimeAging {
         LivingEntity target = (LivingEntity) event.getTarget();
         LAST_HIT.put(target.getUUID(), new Hit(event.getPlayer().getUUID(), target.level.getGameTime()));
         if (PUNCH_ARMED.containsKey(event.getPlayer().getUUID())) {
-            LOG.debug("[ChronoBubble/Tempo] ataque anotado: {} atacou {} (tick {})", event.getPlayer().getName().getString(),
+            LOG.info("[ChronoBubble/Tempo] ataque anotado: {} atacou {} (tick {})", event.getPlayer().getName().getString(),
                     target.getName().getString(), target.level.getGameTime());
         }
     }
@@ -116,7 +116,7 @@ public class TimeAging {
         if (!ChronoConfig.AGING_ENABLED.get() || !ChronoConfig.AGING_FROM_PUNCH.get()) return;
         LAST_HIT.put(target.getUUID(), new Hit(event.getSource().getEntity().getUUID(), target.level.getGameTime()));
         if (PUNCH_ARMED.containsKey(event.getSource().getEntity().getUUID())) {
-            LOG.debug("[ChronoBubble/Tempo] golpe anotado: {} feriu {} (fonte '{}', tick {})", event.getSource().getEntity().getName().getString(),
+            LOG.info("[ChronoBubble/Tempo] golpe anotado: {} feriu {} (fonte '{}', tick {})", event.getSource().getEntity().getName().getString(),
                     target.getName().getString(), event.getSource().getMsgId(), target.level.getGameTime());
         }
     }
@@ -127,7 +127,7 @@ public class TimeAging {
         LivingEntity target = event.getEntityLiving();
         if (inst == null || target.level.isClientSide || !BlockCloverBridge.isStasis(inst.getEffect())) return;
         if (!ChronoConfig.AGING_ENABLED.get() || !ChronoConfig.AGING_FROM_PUNCH.get()) return;
-        LOG.debug("[ChronoBubble/Tempo] Chrono Stasis aplicado em {} ({} ticks, j\u00e1 tinha: {}, j\u00e1 marcado: {})", target.getName().getString(),
+        LOG.info("[ChronoBubble/Tempo] Chrono Stasis aplicado em {} ({} ticks, j\u00e1 tinha: {}, j\u00e1 marcado: {})", target.getName().getString(),
                 inst.getDuration(), event.getOldPotionEffect() != null, MARKED.containsKey(target.getUUID()));
         if (event.getOldPotionEffect() != null || MARKED.containsKey(target.getUUID())) return;
         PENDING.add(new Pending(target, target.level.getGameTime()));        // decide no próximo tick (soco ou não)
@@ -146,7 +146,7 @@ public class TimeAging {
             if (!target.isAlive() || MARKED.containsKey(target.getUUID())) continue;
             PlayerEntity puncher = findPuncher(target, now);
             Hit hit = LAST_HIT.get(target.getUUID());
-            LOG.debug("[ChronoBubble/Tempo] decis\u00e3o do soco para {}: \u00faltimo golpe {} (tick {}), soco armado em {}, resultado: {}",
+            LOG.info("[ChronoBubble/Tempo] decis\u00e3o do soco para {}: \u00faltimo golpe {} (tick {}), soco armado em {}, resultado: {}",
                     target.getName().getString(), hit == null ? "nenhum" : hit.player, hit == null ? -1 : hit.tick,
                     hit == null ? "-" : PUNCH_ARMED.get(hit.player), puncher == null ? "N\u00c3O marcado" : "marcado por " + puncher.getName().getString());
             if (puncher != null) {
@@ -180,7 +180,7 @@ public class TimeAging {
         LivingEntity target = event.getEntityLiving();
         if (inst == null || target.level.isClientSide || !BlockCloverBridge.isStasis(inst.getEffect())) return;
         UUID caster = MARKED.remove(target.getUUID());
-        LOG.debug("[ChronoBubble/Tempo] Chrono Stasis acabou sozinho em {} (marcado: {})", target.getName().getString(), caster != null);
+        LOG.info("[ChronoBubble/Tempo] Chrono Stasis acabou sozinho em {} (marcado: {})", target.getName().getString(), caster != null);
         if (caster != null) advance(target, caster);
     }
 
@@ -188,7 +188,7 @@ public class TimeAging {
     @SubscribeEvent
     public static void onRemoved(PotionEvent.PotionRemoveEvent event) {
         if (BlockCloverBridge.isStasis(event.getPotion()) && MARKED.remove(event.getEntityLiving().getUUID()) != null) {
-            LOG.debug("[ChronoBubble/Tempo] Chrono Stasis tirado antes do fim de {}: sem tempo avan\u00e7ado", event.getEntityLiving().getName().getString());
+            LOG.info("[ChronoBubble/Tempo] Chrono Stasis tirado antes do fim de {}: sem tempo avan\u00e7ado", event.getEntityLiving().getName().getString());
         }
     }
 
@@ -224,14 +224,14 @@ public class TimeAging {
         ServerWorld world = (ServerWorld) target.level;
         PlayerEntity caster = world.getServer().getPlayerList().getPlayer(casterId);
         if (caster == null || !caster.isAlive() || caster == target) {        // saiu do jogo: o tempo não avança
-            LOG.debug("[ChronoBubble/Tempo] tempo avan\u00e7ado cancelado: quem congelou n\u00e3o est\u00e1 dispon\u00edvel");
+            LOG.info("[ChronoBubble/Tempo] tempo avan\u00e7ado cancelado: quem congelou n\u00e3o est\u00e1 dispon\u00edvel");
             return;
         }
 
         float health = target.getHealth() + target.getAbsorptionAmount();
         AgingRule.Result r = AgingRule.resolve(health, target.getMaxHealth(), BlockCloverBridge.getTime(caster),
                 ChronoConfig.f(ChronoConfig.AGING_TIME_PER_HP), isBoss(target), ChronoConfig.f(ChronoConfig.AGING_BOSS_FRACTION));
-        LOG.debug("[ChronoBubble/Tempo] tempo avan\u00e7ado em {}: vida {}, Time de {} = {}, resultado {}", target.getName().getString(),
+        LOG.info("[ChronoBubble/Tempo] tempo avan\u00e7ado em {}: vida {}, Time de {} = {}, resultado {}", target.getName().getString(),
                 health, caster.getName().getString(), BlockCloverBridge.getTime(caster), r);
         if (r.timeCost <= 0) {
             Msg.bar(caster, TextFormatting.GRAY, "aging_no_time", target.getDisplayName());

@@ -139,7 +139,7 @@ public class ChronoThrowHandler {
             return;
         }
         if (!stasis && !steal && !grigora) return;
-        LOGGER.debug("[ChronoBubble] " + name + " usado. Shift=" + player.isShiftKeyDown());
+        LOGGER.info("[ChronoBubble] " + name + " usado. Shift=" + player.isShiftKeyDown());
 
         if (grigora) {                                  // Alt + Grigora = vers\u00e3o sustentada em \u00e1rea
             if (!ChronoConfig.GRIGORA_ENABLED.get() || !SustainedStasis.holdsTrigger(player)) return;

@@ -1,6 +1,16 @@
 # Changelog
 
-## 1.1.0 (não lançado)
+## 1.2.0 (não lançado)
+
+- Versão nova para ser fácil saber qual `.jar` está instalado: o nome passa a ser `chrono_bubble-1.16.5-1.2.0.jar` e o log
+  de inicialização mostra a versão.
+- Diagnóstico dos socos (Chrono Stasis e Time Steal) no `latest.log`, com os marcadores `[ChronoBubble/Tempo]`,
+  `[ChronoBubble/TimeSteal]` e `[ChronoBubble] ... usado`.
+- Corrigido: o soco do Time Steal ainda não apodrecia. O Block Clover trata o ataque com prioridade LOWEST, a mesma
+  que o addon usava para fechar o soco, e o addon às vezes rodava antes: fechava o soco antes de o mod gastar a mana
+  e descartava tudo. Agora o soco é fechado no fim do tick do servidor, que vem sempre depois.
+
+## 1.1.0
 
 ### Adicionado
 - **Soco do Time Steal com apodrecimento**: o roubo não acontece mais na hora. Durante alguns segundos (padrão 3 s)

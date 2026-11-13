@@ -2,6 +2,7 @@ package com.gabriel.chronobubble;
 
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -9,6 +10,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
@@ -24,18 +26,25 @@ import java.util.UUID;
  * </ol>
  * Por isso o addon olha o soco no {@link AttackEntityEvent} com prioridade máxima, ANTES do Block Clover (quando o
  * soco ainda está armado), e aplica o resultado no dano que vem logo em seguida (onde dá para cancelar o dano para
- * o apodrecimento). Se esse dano não vier (alvo invulnerável), o resultado é aplicado no fim do evento de ataque.
+ * o apodrecimento). Se esse dano não vier (alvo invulnerável), o resultado é aplicado no fim do tick do servidor.
+ * <p>
+ * Atenção: o Block Clover trata o ataque com prioridade LOWEST. Fechar o soco num listener LOWEST do mesmo evento
+ * não garante rodar depois dele (a ordem entre listeners da mesma prioridade não é fixa), e foi exatamente isso
+ * que quebrou a primeira versão: o addon fechava o soco antes de o mod gastar a mana. O fim do tick vem sempre depois.
  */
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TimeStealFix {
-    /** Diagnóstico: logs/debug.log, procure por "[ChronoBubble/TimeSteal]". */
+    /** Diagnóstico: latest.log, procure por "[ChronoBubble/TimeSteal]". */
     private static final org.apache.logging.log4j.Logger LOG = org.apache.logging.log4j.LogManager.getLogger();
 
     private static final class Before {
         final int time;
         final float mana;
         final LivingEntity target;
-        Before(int time, float mana, LivingEntity target) { this.time = time; this.mana = mana; this.target = target; }
+        final long tick;
+        Before(int time, float mana, LivingEntity target, long tick) {
+            this.time = time; this.mana = mana; this.target = target; this.tick = tick;
+        }
     }
 
     private static final Map<UUID, Before> PENDING = new HashMap<>();
@@ -52,8 +61,8 @@ public class TimeStealFix {
         ServerPlayerEntity player = (ServerPlayerEntity) event.getPlayer();
         if (!BlockCloverBridge.isStealPunchActive(player)) return;
         PENDING.put(player.getUUID(), new Before(BlockCloverBridge.getTime(player), BlockCloverBridge.getMana(player),
-                (LivingEntity) event.getTarget()));
-        LOG.debug("[ChronoBubble/TimeSteal] soco armado atacou {}: Time {}, mana {}", event.getTarget().getName().getString(),
+                (LivingEntity) event.getTarget(), player.level.getGameTime()));
+        LOG.info("[ChronoBubble/TimeSteal] soco armado atacou {}: Time {}, mana {}", event.getTarget().getName().getString(),
                 BlockCloverBridge.getTime(player), BlockCloverBridge.getMana(player));
     }
 
@@ -69,12 +78,21 @@ public class TimeStealFix {
         if (apply(player, b, damage)) event.setCanceled(true);                // o dano vem aos poucos
     }
 
-    /** Fim do ataque: se o dano não veio (alvo invulnerável, outro mod cancelou...), aplica o resultado sem dano. */
-    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
-    public static void afterAttack(AttackEntityEvent event) {
-        Before b = PENDING.remove(event.getPlayer().getUUID());
-        if (b == null || !(event.getPlayer() instanceof ServerPlayerEntity)) return;
-        apply((ServerPlayerEntity) event.getPlayer(), b, 0.0F);
+    /**
+     * Fim do tick: o Block Clover já processou o soco. Se o dano dele não veio (alvo invulnerável, outro mod
+     * cancelou...), aplica o resultado sem dano.
+     */
+    @SubscribeEvent
+    public static void onServerTick(TickEvent.ServerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || PENDING.isEmpty()) return;
+        for (Iterator<Map.Entry<UUID, Before>> it = PENDING.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<UUID, Before> e = it.next();
+            Before b = e.getValue();
+            if (b.target.level.getGameTime() < b.tick) continue;
+            it.remove();
+            ServerPlayerEntity player = b.target.getServer() == null ? null : b.target.getServer().getPlayerList().getPlayer(e.getKey());
+            if (player != null) apply(player, b, 0.0F);
+        }
     }
 
     /**
@@ -86,7 +104,7 @@ public class TimeStealFix {
     private static boolean apply(ServerPlayerEntity player, Before b, float damage) {
         float manaNow = BlockCloverBridge.getMana(player);
         int timeNow = BlockCloverBridge.getTime(player);
-        LOG.debug("[ChronoBubble/TimeSteal] depois do soco em {}: mana {} -> {}, Time {} -> {}, dano {}",
+        LOG.info("[ChronoBubble/TimeSteal] depois do soco em {}: mana {} -> {}, Time {} -> {}, dano {}",
                 b.target.getName().getString(), b.mana, manaNow, b.time, timeNow, damage);
         if (b.time < 0 || !(manaNow < b.mana - 1.0F)) return false;            // o soco não foi consumido
         int fixed = ChronoConfig.STEAL_PUNCH_GAIN.get();
@@ -103,7 +121,7 @@ public class TimeStealFix {
         BlockCloverBridge.setTime(player, b.time);                              // o Time também vem aos poucos
         BlockCloverBridge.syncToClient(player);
         TimeRot.start(b.target, player, damage, gain, delay);
-        LOG.debug("[ChronoBubble/TimeSteal] apodrecimento começou: {} de dano e {} de Time em {} ticks", damage, gain, delay);
+        LOG.info("[ChronoBubble/TimeSteal] apodrecimento começou: {} de dano e {} de Time em {} ticks", damage, gain, delay);
         return true;
     }
 }
