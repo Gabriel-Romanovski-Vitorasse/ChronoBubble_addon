@@ -15,6 +15,7 @@ import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.event.entity.living.PotionEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -89,6 +90,22 @@ public class TimeAging {
         if (!ChronoConfig.AGING_ENABLED.get() || !ChronoConfig.AGING_FROM_ORB.get() || caster == null) return;
         MARKED.put(target.getUUID(), caster.getUUID());
         LOG.debug("[ChronoBubble/Tempo] esfera marcou {} (por {})", target.getName().getString(), caster.getName().getString());
+    }
+
+    /**
+     * Anota o ataque ANTES do Block Clover: no soco do Chrono Stasis, o mod aplica o congelamento no tratamento deste
+     * evento (e só depois causa o dano), então este é o primeiro momento em que dá para saber quem bateu.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onAttack(AttackEntityEvent event) {
+        if (!(event.getPlayer() instanceof ServerPlayerEntity) || !(event.getTarget() instanceof LivingEntity)) return;
+        if (!ChronoConfig.AGING_ENABLED.get() || !ChronoConfig.AGING_FROM_PUNCH.get()) return;
+        LivingEntity target = (LivingEntity) event.getTarget();
+        LAST_HIT.put(target.getUUID(), new Hit(event.getPlayer().getUUID(), target.level.getGameTime()));
+        if (PUNCH_ARMED.containsKey(event.getPlayer().getUUID())) {
+            LOG.debug("[ChronoBubble/Tempo] ataque anotado: {} atacou {} (tick {})", event.getPlayer().getName().getString(),
+                    target.getName().getString(), target.level.getGameTime());
+        }
     }
 
     /** Anota quem feriu o alvo (qualquer fonte de dano com um jogador por trás, inclusive a do soco do Block Clover). */
