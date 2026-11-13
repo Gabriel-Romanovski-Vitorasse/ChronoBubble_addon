@@ -23,7 +23,8 @@ import java.util.UUID;
  * Apodrecimento do soco do Time Steal: em vez de roubar na hora, o alvo "sente o tempo passar" por alguns segundos.
  * A cada pulso (meio segundo) ele leva uma parte do dano do soco e quem bateu ganha uma parte do Time. Os totais são
  * os mesmos do roubo instantâneo; só ficam distribuídos no tempo. Se o alvo morrer no meio, o resto se perde.
- * Quem começa o apodrecimento é o {@link TimeStealFix}, que detecta o soco.
+ * Quem começa o apodrecimento é o Alt + Time Steal ({@link #cast}): o Time Steal original do Block Clover é
+ * cancelado e o alvo na mira do jogador apodrece. Sem Alt, o Time Steal é o do Block Clover, sem interferência.
  */
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TimeRot {
@@ -50,6 +51,58 @@ public class TimeRot {
     }
 
     private static final List<Rot> ROTS = new ArrayList<>();
+    /** Recarga do Alt + Time Steal, por jogador. */
+    private static final java.util.Map<UUID, Long> READY_AT = new java.util.HashMap<>();
+
+    /**
+     * Alt + Time Steal: o alvo na mira (at\u00e9 {@code rot_steal.reach} blocos, sem atravessar blocos) come\u00e7a a apodrecer.
+     * Chamado no lugar do Time Steal original, que \u00e9 cancelado.
+     */
+    public static void cast(ServerPlayerEntity player) {
+        if (!ChronoConfig.ROT_STEAL_ENABLED.get()) return;
+        long now = player.level.getGameTime();
+        Long ready = READY_AT.get(player.getUUID());
+        if (ready != null && now < ready) {
+            Msg.bar(player, TextFormatting.GRAY, "rot_cooldown", Msg.f1((ready - now) / 20.0));
+            return;
+        }
+        if (ChronoConfig.ROT_STEAL_REQUIRE_COMBAT.get() && !BlockCloverBridge.isInCombat(player)) {
+            Msg.bar(player, TextFormatting.RED, "need_combat");
+            return;
+        }
+        float mana = ChronoConfig.f(ChronoConfig.ROT_STEAL_MANA_COST);
+        if (!(BlockCloverBridge.getMana(player) > mana)) {
+            Msg.bar(player, TextFormatting.RED, "no_mana");
+            return;
+        }
+        LivingEntity target = targetInSight(player, ChronoConfig.ROT_STEAL_REACH.get());
+        if (target == null) {
+            Msg.bar(player, TextFormatting.GRAY, "rot_no_target");
+            return;
+        }
+        BlockCloverBridge.spend(player, mana, 0, 0);
+        BlockCloverBridge.syncToClient(player);
+        READY_AT.put(player.getUUID(), now + ChronoConfig.ROT_STEAL_COOLDOWN_TICKS.get());
+        int ticks = (int) Math.round(ChronoConfig.ROT_STEAL_DURATION.get() * 20.0D);
+        start(target, player, ChronoConfig.f(ChronoConfig.ROT_STEAL_DAMAGE), ChronoConfig.ROT_STEAL_TIME_GAIN.get(), ticks);
+        player.swing(net.minecraft.util.Hand.MAIN_HAND, true);
+        Msg.bar(player, TextFormatting.AQUA, "rot_start", target.getDisplayName());
+    }
+
+    /** Entidade viva na mira do jogador, at\u00e9 {@code reach} blocos e sem atravessar blocos (ou null). */
+    static LivingEntity targetInSight(ServerPlayerEntity player, double reach) {
+        net.minecraft.util.math.vector.Vector3d eye = player.getEyePosition(1.0F);
+        net.minecraft.util.math.vector.Vector3d look = player.getViewVector(1.0F);
+        net.minecraft.util.math.vector.Vector3d end = eye.add(look.scale(reach));
+        net.minecraft.util.math.BlockRayTraceResult wall = player.level.clip(new net.minecraft.util.math.RayTraceContext(eye, end,
+                net.minecraft.util.math.RayTraceContext.BlockMode.COLLIDER, net.minecraft.util.math.RayTraceContext.FluidMode.NONE, player));
+        if (wall.getType() != net.minecraft.util.math.RayTraceResult.Type.MISS) end = wall.getLocation();
+        net.minecraft.util.math.AxisAlignedBB box = player.getBoundingBox().expandTowards(end.subtract(eye)).inflate(1.0D);
+        net.minecraft.util.math.EntityRayTraceResult hit = net.minecraft.entity.projectile.ProjectileHelper.getEntityHitResult(
+                player, eye, end, box, e -> e instanceof LivingEntity && e.isAlive() && !e.isSpectator() && e != player,
+                eye.distanceToSqr(end));
+        return hit == null ? null : (LivingEntity) hit.getEntity();
+    }
 
     /** Quantos pulsos cabem em {@code ticks} (pelo menos 1). */
     static int pulsesFor(int ticks) {
@@ -96,7 +149,7 @@ public class TimeRot {
             }
             long now = target.level.getGameTime();
             if (now % 2 == 0) rotParticles(target, 3);                           // apodrecendo entre os pulsos
-            if (ChronoConfig.STEAL_ROT_SLOW.get() && now % 10 == 0) {
+            if (ChronoConfig.ROT_STEAL_SLOW.get() && now % 10 == 0) {
                 target.addEffect(new EffectInstance(Effects.MOVEMENT_SLOWDOWN, 15, 1, false, false, false));
             }
             if (now < r.nextPulse) continue;
@@ -146,5 +199,6 @@ public class TimeRot {
     @SubscribeEvent
     public static void onServerStopping(FMLServerStoppingEvent event) {
         ROTS.clear();
+        READY_AT.clear();
     }
 }

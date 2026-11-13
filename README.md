@@ -18,7 +18,7 @@ outra versão, é recusado ao conectar.
 | Esfera com anéis de numerais romanos em volta de quem está em Chrono Stasis | automático |
 | Chrono Stasis arremessável (congela o alvo que a esfera acertar) | Shift + Chrono Stasis |
 | Time Steal arremessável (a vida drenada vira Time) | Shift + Time Steal |
-| Soco do Time Steal com apodrecimento: o alvo sente o tempo passar por 3 s e o dano e o Time chegam aos poucos | soco do Time Steal |
+| Time Steal apodrecedor: o alvo na mira apodrece por 3 s (tom oliva, cinzas, lentidão) e o dano e o Time chegam aos poucos | Alt + Time Steal |
 | Chrono Stasis sustentado (prende até N alvos; o dano recebido fica guardado e cai de uma vez ao soltar) | Alt + Shift + Chrono Stasis |
 | Chrono Stasis Grigora sustentado (prende todos em volta) | Alt + Chrono Stasis Grigora |
 | Zona de Chrono Stasis: para projéteis de outros no ar e, depois de 2 s, acelera o tempo deles até se desfazerem | tecla **B** |

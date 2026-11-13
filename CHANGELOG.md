@@ -4,19 +4,23 @@
 
 - Versão nova para ser fácil saber qual `.jar` está instalado: o nome passa a ser `chrono_bubble-1.16.5-1.2.0.jar` e o log
   de inicialização mostra a versão.
-- Diagnóstico dos socos (Chrono Stasis e Time Steal) no `latest.log`, com os marcadores `[ChronoBubble/Tempo]`,
-  `[ChronoBubble/TimeSteal]` e `[ChronoBubble] ... usado`.
-- Corrigido: o soco do Time Steal ainda não apodrecia. O Block Clover trata o ataque com prioridade LOWEST, a mesma
-  que o addon usava para fechar o soco, e o addon às vezes rodava antes: fechava o soco antes de o mod gastar a mana
-  e descartava tudo. Agora o soco é fechado no fim do tick do servidor, que vem sempre depois.
+- Diagnóstico do soco do Chrono Stasis no `latest.log`, com os marcadores `[ChronoBubble/Tempo]` e
+  `[ChronoBubble] ... usado`.
+- **Time Steal apodrecedor agora é Alt + Time Steal.** Interceptar o soco do Time Steal do Block Clover se mostrou
+  frágil (o mod executa o soco dentro do próprio tratamento do ataque, numa ordem que o addon não controla), então o
+  apodrecimento virou uma magia própria: com Alt, o Time Steal original é cancelado e o alvo na mira (até 5 blocos)
+  apodrece por 3 s, levando 8 de dano e rendendo +20 de Time aos poucos, sem o limite de 1000 de Time do original.
+  Custa 15 de mana, recarga de 3 s, exige a combat bar. Seção `rot_steal` da config.
+- O soco do Time Steal sem Alt volta a ser exatamente o do Block Clover. O ajuste antigo do soco (`TimeStealFix`,
+  "+20 de Time por soco") foi retirado junto com as opções `steal.punch_fixed_gain`, `steal.punch_delay_seconds` e
+  `steal.punch_rot_slow`: ele dependia da mesma interceptação e não funcionava.
 
 ## 1.1.0
 
 ### Adicionado
-- **Soco do Time Steal com apodrecimento**: o roubo não acontece mais na hora. Durante alguns segundos (padrão 3 s)
-  o alvo sente o tempo passar e apodrece, com cinzas e fumaça e mais lento; a cada meio segundo ele leva uma parte do
-  dano do soco e você ganha uma parte do Time. Os totais são os mesmos de antes. Se o alvo morrer no meio, o resto se
-  perde. Opções `steal.punch_delay_seconds` (0 = na hora) e `steal.punch_rot_slow`.
+- **Apodrecimento do Time Steal** (hoje no Alt + Time Steal, ver 1.2.0): durante alguns segundos o alvo sente o tempo
+  passar e apodrece, com cinzas e fumaça e mais lento; a cada meio segundo ele leva uma parte do dano e você ganha uma
+  parte do Time. Se o alvo morrer no meio, o resto se perde.
   O próprio modelo do alvo escurece em tom oliva/podre ao longo do apodrecimento, com um pulso a cada roubo, e volta
   ao normal no fim (vale para mobs de qualquer mod e para jogadores; opção do cliente `visual.rot_tint`).
 - **Tempo avançado no fim do Chrono Stasis**: quando o Chrono Stasis normal (soco do Block Clover ou esfera

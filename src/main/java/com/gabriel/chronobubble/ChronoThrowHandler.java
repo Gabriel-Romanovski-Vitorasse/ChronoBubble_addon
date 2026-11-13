@@ -139,7 +139,7 @@ public class ChronoThrowHandler {
             return;
         }
         if (!stasis && !steal && !grigora) return;
-        LOGGER.info("[ChronoBubble] " + name + " usado. Shift=" + player.isShiftKeyDown());
+        LOGGER.info("[ChronoBubble] " + name + " usado. Shift=" + player.isShiftKeyDown() + " Alt=" + SustainedStasis.holdsTrigger(player));
 
         if (grigora) {                                  // Alt + Grigora = vers\u00e3o sustentada em \u00e1rea
             if (!ChronoConfig.GRIGORA_ENABLED.get() || !SustainedStasis.holdsTrigger(player)) return;
@@ -152,6 +152,15 @@ public class ChronoThrowHandler {
             return;
         }
 
+        if (steal && !player.isShiftKeyDown() && ChronoConfig.ROT_STEAL_ENABLED.get() && SustainedStasis.holdsTrigger(player)) {
+            try {                                       // Alt + Time Steal: vers\u00e3o do addon (apodrecimento)
+                event.setCanceled(true);
+            } catch (Throwable t) {
+                return;                                 // n\u00e3o deu para cancelar: fica o Time Steal original
+            }
+            TimeRot.cast((ServerPlayerEntity) player);
+            return;
+        }
         if (!player.isShiftKeyDown()) {
             if (stasis) TimeAging.armPunch((ServerPlayerEntity) player);   // soco normal: o tempo do alvo pode avan\u00e7ar
             return;
