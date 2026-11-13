@@ -104,6 +104,8 @@ public final class ChronoConfig {
     public static final ForgeConfigSpec.DoubleValue STEAL_DRAIN_HP;
     public static final ForgeConfigSpec.IntValue STEAL_PUNCH_GAIN;
     public static final ForgeConfigSpec.DoubleValue STEAL_TIME_PER_HP;
+    public static final ForgeConfigSpec.DoubleValue STEAL_PUNCH_DELAY;
+    public static final ForgeConfigSpec.BooleanValue STEAL_ROT_SLOW;
     public static final ForgeConfigSpec.BooleanValue SUSTAIN_ENABLED;
     public static final ForgeConfigSpec.IntValue SUSTAIN_MAX_TARGETS;
     public static final ForgeConfigSpec.DoubleValue SUSTAIN_MANA_PER_SECOND;
@@ -203,6 +205,7 @@ public final class ChronoConfig {
     public static final ForgeConfigSpec.DoubleValue GRIMOIRE_HEIGHT;
     public static final ForgeConfigSpec.DoubleValue GRIMOIRE_FRONT;
     public static final ForgeConfigSpec.DoubleValue GRIMOIRE_SCALE;
+    public static final ForgeConfigSpec.BooleanValue ROT_TINT;
     public static final ForgeConfigSpec.BooleanValue SECOND_RING;
 
     static {
@@ -231,6 +234,8 @@ public final class ChronoConfig {
         STEAL_DRAIN_HP = dbl(s, "drain_hp", "Vida m\u00e1xima drenada por acerto (2 = 1 cora\u00e7\u00e3o)", 10.0, 0.5, 1000.0);
         STEAL_PUNCH_GAIN = integer(s, "punch_fixed_gain", "Time ganho a cada soco do Time Steal normal (sem Shift). 0 = deixa o comportamento original do mod (+10 e s\u00f3 abaixo de 1000).", 20, 0, 100000);
         STEAL_TIME_PER_HP = dbl(s, "time_per_hp", "Time ganho por ponto de vida drenado", 3.0, 0.0, 1000.0);
+        STEAL_PUNCH_DELAY = dbl(s, "punch_delay_seconds", "O soco do Time Steal normal n\u00e3o rouba na hora: durante tantos segundos o alvo sente o tempo passar e apodrece, levando o dano aos poucos enquanto voc\u00ea ganha o Time aos poucos. 0 = tudo na hora, como no mod original", 3.0, 0.0, 20.0);
+        STEAL_ROT_SLOW = bool(s, "punch_rot_slow", "true = o alvo fica lento enquanto apodrece", true);
         s.pop();
 
         section(s, "sustained", true, "Chrono Stasis sustentado: Alt + Shift + Chrono Stasis (a tecla Alt pode ser trocada nos Controles)");
@@ -372,6 +377,7 @@ public final class ChronoConfig {
         GRIMOIRE_HEIGHT = dbl(c, "grimoire_height", "Altura em rela\u00e7\u00e3o aos p\u00e9s do jogador, em blocos", 1.15, 0.0, 4.0);
         GRIMOIRE_FRONT = dbl(c, "grimoire_front", "Deslocamento em blocos. Positivo = \u00e0 frente do jogador, negativo = atr\u00e1s", 0.15, -3.0, 3.0);
         GRIMOIRE_SCALE = dbl(c, "grimoire_scale", "Tamanho do grim\u00f3rio (multiplicador; 1 = normal)", 1.0, 0.2, 4.0);
+        ROT_TINT = bool(c, "rot_tint", "true = quem apodrece pelo soco do Time Steal fica com o corpo escurecendo em tom oliva/podre", true);
         SECOND_RING = bool(c, "second_ring", "true = desenha um segundo anel, mais fino, inclinado para o outro lado (o anime usa um s\u00f3)", false);
         c.pop();
         CLIENT_SPEC = c.build();

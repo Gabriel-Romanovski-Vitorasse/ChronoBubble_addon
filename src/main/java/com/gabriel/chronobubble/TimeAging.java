@@ -14,6 +14,8 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.event.entity.living.PotionEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -34,8 +36,10 @@ import java.util.UUID;
  * congelou:
  * <ul>
  *   <li>esfera: marcada direto por {@link StasisOrbEntity} ({@link #markOrb});</li>
- *   <li>soco: o efeito aparece no alvo, e no tick seguinte procura-se o jogador por perto que armou o soco do
- *   Chrono Stasis há pouco e cujo último alvo atacado é esse mob ({@link #armPunch}).</li>
+ *   <li>soco: o efeito aparece no alvo, e no tick seguinte procura-se quem acabou de causar dano a ele e tinha
+ *   armado o soco do Chrono Stasis há pouco ({@link #armPunch}). O soco do Block Clover não é um ataque comum
+ *   (usa uma fonte de dano própria e aplica o efeito no meio do dano), então o "último alvo atacado" do Minecraft
+ *   não serve: o addon anota ele mesmo quem feriu cada alvo ({@link #onHurt}).</li>
  * </ul>
  * O sustentado, o Grigora e o Time Hop tiram/trocam o efeito ou não marcam o alvo, então não envelhecem. Se o efeito
  * for removido antes do fim (leite, troca para sustentado...), a marca some e nada acontece.
@@ -43,8 +47,9 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TimeAging {
     /** Quanto tempo depois de armar o soco ele ainda conta (o soco do Block Clover fica "armado" até acertar). */
-    private static final int PUNCH_WINDOW_TICKS = 200;
-    private static final double PUNCH_REACH = 6.0D;
+    private static final int PUNCH_WINDOW_TICKS = 600;
+    /** O dano do soco e o efeito acontecem no mesmo tick; a decisão é no seguinte. */
+    private static final int HIT_WINDOW_TICKS = 2;
 
     /** Alvo (uuid) -> quem congelou (uuid). */
     private static final Map<UUID, UUID> MARKED = new HashMap<>();
@@ -59,6 +64,15 @@ public class TimeAging {
 
     private static final List<Pending> PENDING = new ArrayList<>();
 
+    /** Último jogador que feriu cada alvo, e quando. */
+    private static final class Hit {
+        final UUID player;
+        final long tick;
+        Hit(UUID player, long tick) { this.player = player; this.tick = tick; }
+    }
+
+    private static final Map<UUID, Hit> LAST_HIT = new HashMap<>();
+
     // ---------- marcação ----------
 
     /** O jogador usou o Chrono Stasis sem Shift/Alt: o soco está armado. */
@@ -70,6 +84,15 @@ public class TimeAging {
     public static void markOrb(LivingEntity target, PlayerEntity caster) {
         if (!ChronoConfig.AGING_ENABLED.get() || !ChronoConfig.AGING_FROM_ORB.get() || caster == null) return;
         MARKED.put(target.getUUID(), caster.getUUID());
+    }
+
+    /** Anota quem feriu o alvo (qualquer fonte de dano com um jogador por trás, inclusive a do soco do Block Clover). */
+    @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
+    public static void onHurt(LivingHurtEvent event) {
+        LivingEntity target = event.getEntityLiving();
+        if (target.level.isClientSide || !(event.getSource().getEntity() instanceof ServerPlayerEntity)) return;
+        if (!ChronoConfig.AGING_ENABLED.get() || !ChronoConfig.AGING_FROM_PUNCH.get()) return;
+        LAST_HIT.put(target.getUUID(), new Hit(event.getSource().getEntity().getUUID(), target.level.getGameTime()));
     }
 
     @SubscribeEvent
@@ -91,6 +114,7 @@ public class TimeAging {
             long now = target.level.getGameTime();
             if (now <= p.tick) continue;                                        // espera o soco terminar de registrar
             it.remove();
+            pruneHits(now);
             if (!target.isAlive() || MARKED.containsKey(target.getUUID())) continue;
             PlayerEntity puncher = findPuncher(target, now);
             if (puncher != null) {
@@ -100,17 +124,20 @@ public class TimeAging {
         }
     }
 
-    /** Jogador por perto que armou o soco há pouco e cujo último alvo atacado é este. */
+    /** Quem acabou de ferir o alvo e tinha armado o soco do Chrono Stasis há pouco (ou null). */
     private static PlayerEntity findPuncher(LivingEntity target, long now) {
-        for (PlayerEntity p : target.level.players()) {
-            Long armed = PUNCH_ARMED.get(p.getUUID());
-            if (armed == null || now - armed > PUNCH_WINDOW_TICKS) continue;
-            if (p.distanceToSqr(target) > PUNCH_REACH * PUNCH_REACH) continue;
-            if (p.getLastHurtMob() != target) continue;
-            if (p.tickCount - p.getLastHurtMobTimestamp() > 3) continue;
-            return p;
-        }
+        Hit hit = LAST_HIT.get(target.getUUID());
+        if (hit == null || now - hit.tick > HIT_WINDOW_TICKS) return null;
+        Long armed = PUNCH_ARMED.get(hit.player);
+        if (armed == null || now - armed > PUNCH_WINDOW_TICKS) return null;
+        for (PlayerEntity p : target.level.players()) if (p.getUUID().equals(hit.player)) return p;
         return null;
+    }
+
+    /** Esquece golpes antigos (o mapa não cresce sem limite). */
+    private static void pruneHits(long now) {
+        if (LAST_HIT.size() < 256) return;
+        LAST_HIT.values().removeIf(h -> now - h.tick > 200);
     }
 
     // ---------- fim do congelamento ----------
@@ -140,6 +167,7 @@ public class TimeAging {
     public static void onDeath(LivingDeathEvent event) {
         MARKED.remove(event.getEntityLiving().getUUID());
         PUNCH_ARMED.remove(event.getEntityLiving().getUUID());
+        LAST_HIT.remove(event.getEntityLiving().getUUID());
     }
 
     @SubscribeEvent
@@ -147,6 +175,7 @@ public class TimeAging {
         MARKED.clear();
         PUNCH_ARMED.clear();
         PENDING.clear();
+        LAST_HIT.clear();
     }
 
     private static boolean isBoss(Entity e) {

@@ -3,6 +3,12 @@
 ## 1.1.0 (não lançado)
 
 ### Adicionado
+- **Soco do Time Steal com apodrecimento**: o roubo não acontece mais na hora. Durante alguns segundos (padrão 3 s)
+  o alvo sente o tempo passar e apodrece, com cinzas e fumaça e mais lento; a cada meio segundo ele leva uma parte do
+  dano do soco e você ganha uma parte do Time. Os totais são os mesmos de antes. Se o alvo morrer no meio, o resto se
+  perde. Opções `steal.punch_delay_seconds` (0 = na hora) e `steal.punch_rot_slow`.
+  O próprio modelo do alvo escurece em tom oliva/podre ao longo do apodrecimento, com um pulso a cada roubo, e volta
+  ao normal no fim (vale para mobs de qualquer mod e para jogadores; opção do cliente `visual.rot_tint`).
 - **Tempo avançado no fim do Chrono Stasis**: quando o Chrono Stasis normal (soco do Block Clover ou esfera
   arremessada comum) acaba sozinho, o tempo do alvo salta à frente. Quem congelou paga Time pela vida dele (padrão:
   3 Time por ponto de vida): se o Time cobre a vida toda, o alvo envelhece até virar pó; se não, leva o dano que o Time
@@ -85,6 +91,9 @@
 - A esfera piscando (tempo instável) só aparecia para quem já estava por perto.
 - A esfera de Time Steal ou sustentada voltava como esfera comum ao recarregar o mundo.
 - Mensagens do Time Hop reformulado não eram traduzíveis.
+- O tempo avançado não acontecia no **soco** do Chrono Stasis: o soco do Block Clover usa uma fonte de dano própria e
+  não conta como "último alvo atacado" do jogador, que era o que o addon conferia. Agora o addon anota ele mesmo quem
+  feriu cada alvo.
 - Os efeitos extras do Time Hop (sem dano de queda, chegada protegida, pulso, bolha fantasma) nunca disparavam:
   o addon escutava tanto o `AbilityUseEvent.Pre` quanto o `.Post` do Block Clover, e o `Post` chegava com o jogador
   já teleportado, apagando o ponto de partida. Agora o `Post` é ignorado. (Uma primeira versão dessa correção
