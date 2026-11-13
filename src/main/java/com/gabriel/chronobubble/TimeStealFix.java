@@ -16,6 +16,9 @@ import java.util.UUID;
  */
 @Mod.EventBusSubscriber(modid = ChronoBubbleMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TimeStealFix {
+    /** Diagn\u00f3stico: logs/debug.log, procure por "[ChronoBubble/TimeSteal]". */
+    private static final org.apache.logging.log4j.Logger LOG = org.apache.logging.log4j.LogManager.getLogger();
+
 
     private static final class Before {
         final int time;
@@ -38,6 +41,8 @@ public class TimeStealFix {
         ServerPlayerEntity player = (ServerPlayerEntity) event.getSource().getEntity();
         if (!BlockCloverBridge.isStealPunchActive(player)) return;
         PENDING.put(player.getUUID(), new Before(BlockCloverBridge.getTime(player), BlockCloverBridge.getMana(player)));
+        LOG.debug("[ChronoBubble/TimeSteal] soco armado acertou {} (fonte '{}'): Time {}, mana {}", event.getEntityLiving().getName().getString(),
+                event.getSource().getMsgId(), BlockCloverBridge.getTime(player), BlockCloverBridge.getMana(player));
     }
 
     /**
@@ -52,6 +57,8 @@ public class TimeStealFix {
         ServerPlayerEntity player = (ServerPlayerEntity) event.getSource().getEntity();
         Before b = PENDING.remove(player.getUUID());
         if (b == null || b.time < 0) return;
+        LOG.debug("[ChronoBubble/TimeSteal] depois do soco: mana {} -> {}, Time {} -> {}, dano {}, cancelado {}", b.mana,
+                BlockCloverBridge.getMana(player), b.time, BlockCloverBridge.getTime(player), event.getAmount(), event.isCanceled());
         if (!(BlockCloverBridge.getMana(player) < b.mana - 1.0F)) return;   // o soco n\u00e3o foi consumido
         int fixed = ChronoConfig.STEAL_PUNCH_GAIN.get();
         int gain = fixed > 0 ? fixed : Math.max(0, BlockCloverBridge.getTime(player) - b.time);   // 0 = ganho original
