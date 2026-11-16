@@ -7,28 +7,31 @@ import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-/** Servidor -> cliente: "este jogador est\u00e1 (ou deixou de estar) com o grim\u00f3rio de uma p\u00e1gina". */
+/**
+ * Servidor -> cliente: quantas p\u00e1ginas o grim\u00f3rio deste jogador tem enquanto ele est\u00e1 renascido
+ * (1, 4, 16 ou 64), ou {@link GrimoireStages#FULL} quando o grim\u00f3rio est\u00e1 completo.
+ */
 public class RebirthPacket {
     private final int entityId;
-    private final boolean reborn;
+    private final int pages;
 
-    public RebirthPacket(int entityId, boolean reborn) {
+    public RebirthPacket(int entityId, int pages) {
         this.entityId = entityId;
-        this.reborn = reborn;
+        this.pages = pages;
     }
 
     public static void encode(RebirthPacket p, PacketBuffer buf) {
         buf.writeInt(p.entityId);
-        buf.writeBoolean(p.reborn);
+        buf.writeVarInt(p.pages);
     }
 
     public static RebirthPacket decode(PacketBuffer buf) {
-        return new RebirthPacket(buf.readInt(), buf.readBoolean());
+        return new RebirthPacket(buf.readInt(), buf.readVarInt());
     }
 
     public static void handle(RebirthPacket p, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() ->
-                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientRebirth.set(p.entityId, p.reborn)));
+                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientRebirth.set(p.entityId, p.pages)));
         ctx.get().setPacketHandled(true);
     }
 }

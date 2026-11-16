@@ -224,8 +224,6 @@
   "config.chrono_bubble.rebirth": "Renascimento",
   "config.chrono_bubble.rebirth.enabled": "Ligado",
   "config.chrono_bubble.rebirth.enabled.tooltip": "Liga/desliga o renascimento",
-  "config.chrono_bubble.rebirth.unlock_time": "Time para desbloquear",
-  "config.chrono_bubble.rebirth.unlock_time.tooltip": "Time necessário para os poderes e o grimório voltarem",
   "config.chrono_bubble.rebirth.block_passive_regen": "Sem regeneração passiva",
   "config.chrono_bubble.rebirth.block_passive_regen.tooltip": "true = sem regeneração passiva de Time até desbloquear",
   "config.chrono_bubble.visual": "Visual e HUD",
@@ -381,5 +379,14 @@
   "msg.chrono_bubble.rot_start": "O tempo de %s começa a apodrecer",
   "msg.chrono_bubble.rebirth_ressurection": "A Time Ressurection te trouxe de volta, mas o grimório ficou com uma página: roube Time até %s para restaurá-lo.",
   "config.chrono_bubble.rebirth.ressurection_reborn": "Time Ressurection deixa o grimório com uma página",
-  "config.chrono_bubble.rebirth.ressurection_reborn.tooltip": "true = quando a passiva Time Ressurection salva o jogador (no golpe fatal ou sozinha, com a vida baixa), ele volta com o grimório de uma página, como no renascimento. A Swallowtail não é usada"
+  "config.chrono_bubble.rebirth.ressurection_reborn.tooltip": "true = quando a passiva Time Ressurection salva o jogador (no golpe fatal ou sozinha, com a vida baixa), ele volta com o grimório de uma página, como no renascimento. A Swallowtail não é usada",
+  "config.chrono_bubble.rebirth.complete_time": "Time para o grimório completo",
+  "config.chrono_bubble.rebirth.complete_time.tooltip": "Time necessário para o grimório ficar completo e os poderes voltarem",
+  "config.chrono_bubble.rebirth.pages_4_time": "Time para 4 páginas",
+  "config.chrono_bubble.rebirth.pages_4_time.tooltip": "Com esse Time o grimório passa de 1 para 4 páginas",
+  "config.chrono_bubble.rebirth.pages_16_time": "Time para 16 páginas",
+  "config.chrono_bubble.rebirth.pages_16_time.tooltip": "Com esse Time o grimório passa para 16 páginas",
+  "config.chrono_bubble.rebirth.pages_64_time": "Time para 64 páginas",
+  "config.chrono_bubble.rebirth.pages_64_time.tooltip": "Com esse Time o grimório passa para 64 páginas (o completo tem 72)",
+  "msg.chrono_bubble.rebirth_pages": "Seu grimório recuperou páginas: agora são %s. Grimório completo com %s de Time."
 }

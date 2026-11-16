@@ -224,8 +224,6 @@
   "config.chrono_bubble.rebirth": "Rebirth",
   "config.chrono_bubble.rebirth.enabled": "Enabled",
   "config.chrono_bubble.rebirth.enabled.tooltip": "Turns rebirth on/off",
-  "config.chrono_bubble.rebirth.unlock_time": "Time to unlock",
-  "config.chrono_bubble.rebirth.unlock_time.tooltip": "Time needed for the powers and the grimoire to come back",
   "config.chrono_bubble.rebirth.block_passive_regen": "No passive regeneration",
   "config.chrono_bubble.rebirth.block_passive_regen.tooltip": "true = no passive Time regeneration until unlocked",
   "config.chrono_bubble.visual": "Visuals and HUD",
@@ -381,5 +379,14 @@
   "msg.chrono_bubble.rot_start": "%s's time starts to rot",
   "msg.chrono_bubble.rebirth_ressurection": "Time Ressurection brought you back, but your grimoire was left with a single page: steal Time up to %s to restore it.",
   "config.chrono_bubble.rebirth.ressurection_reborn": "Time Ressurection leaves a one-page grimoire",
-  "config.chrono_bubble.rebirth.ressurection_reborn.tooltip": "true = when the Time Ressurection passive saves the player (on a killing blow or on its own at low health), they come back with a one-page grimoire, like a rebirth. The Swallowtail is not used"
+  "config.chrono_bubble.rebirth.ressurection_reborn.tooltip": "true = when the Time Ressurection passive saves the player (on a killing blow or on its own at low health), they come back with a one-page grimoire, like a rebirth. The Swallowtail is not used",
+  "config.chrono_bubble.rebirth.complete_time": "Time for the full grimoire",
+  "config.chrono_bubble.rebirth.complete_time.tooltip": "Time needed for the grimoire to be complete and the powers to come back",
+  "config.chrono_bubble.rebirth.pages_4_time": "Time for 4 pages",
+  "config.chrono_bubble.rebirth.pages_4_time.tooltip": "With this much Time the grimoire goes from 1 to 4 pages",
+  "config.chrono_bubble.rebirth.pages_16_time": "Time for 16 pages",
+  "config.chrono_bubble.rebirth.pages_16_time.tooltip": "With this much Time the grimoire goes to 16 pages",
+  "config.chrono_bubble.rebirth.pages_64_time": "Time for 64 pages",
+  "config.chrono_bubble.rebirth.pages_64_time.tooltip": "With this much Time the grimoire goes to 64 pages (the full one has 72)",
+  "msg.chrono_bubble.rebirth_pages": "Your grimoire got pages back: now it has %s. Full grimoire at %s Time."
 }

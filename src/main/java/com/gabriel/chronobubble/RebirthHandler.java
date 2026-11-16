@@ -36,6 +36,8 @@ public class RebirthHandler {
     private static final String TAG_REMOVED = "chrono_bubble_removed";
     /** Quanto Time a Swallowtail gastou para trazer o jogador de volta (s\u00f3 para a mensagem ao renascer). */
     private static final String TAG_RESERVE = "chrono_bubble_reserve";
+    /** P\u00e1ginas que o grim\u00f3rio j\u00e1 recuperou enquanto renascido (1, 4, 16 ou 64). */
+    private static final String TAG_PAGES = "chrono_bubble_pages";
 
     private static final Map<UUID, Integer> LAST_TIME = new HashMap<>();
     /** \u00daltima carga lida da Time Ressurection, para notar quando a pr\u00f3pria passiva do Block Clover age. */
@@ -131,6 +133,7 @@ public class RebirthHandler {
         to.putBoolean(TAG_PENDING, from.getBoolean(TAG_PENDING));
         to.putString(TAG_REMOVED, from.getString(TAG_REMOVED));
         to.putInt(TAG_RESERVE, from.getInt(TAG_RESERVE));
+        to.putInt(TAG_PAGES, from.getInt(TAG_PAGES));
     }
 
     @SubscribeEvent
@@ -161,7 +164,7 @@ public class RebirthHandler {
         PlayerEntity target = (PlayerEntity) event.getTarget();
         if (target.getPersistentData().getBoolean(TAG_REBORN)) {
             ChronoBubbleMod.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity) event.getPlayer()),
-                    new RebirthPacket(target.getId(), true));
+                    new RebirthPacket(target.getId(), pagesOf(target)));
         }
     }
 
@@ -188,6 +191,7 @@ public class RebirthHandler {
             unlock(player);
             return;
         }
+        growPages(player, time);
 
         // Bloqueia a regenera\u00e7\u00e3o passiva (+1/s). Compara com o tick anterior em TODO tick: antes s\u00f3 olhava quando
         // tickCount % 20 == 0, e a regenera\u00e7\u00e3o do Block Clover que ca\u00eda em outro tick passava sem ser vista.
@@ -229,11 +233,32 @@ public class RebirthHandler {
     private static void enterReborn(ServerPlayerEntity player) {
         CompoundNBT data = player.getPersistentData();
         data.putBoolean(TAG_REBORN, true);
+        data.putInt(TAG_PAGES, 1);
         BlockCloverBridge.setTime(player, 0);
         LAST_TIME.put(player.getUUID(), 0);
         addRemoved(data, BlockCloverBridge.lockStasisAbilities(player));
         BlockCloverBridge.syncToClient(player);
         broadcastState(player);
+    }
+
+    /** P\u00e1ginas do grim\u00f3rio de um jogador renascido (ou {@link GrimoireStages#FULL} se ele n\u00e3o est\u00e1). */
+    private static int pagesOf(PlayerEntity player) {
+        CompoundNBT data = player.getPersistentData();
+        if (!data.getBoolean(TAG_REBORN)) return GrimoireStages.FULL;
+        return Math.max(1, data.getInt(TAG_PAGES));
+    }
+
+    /** O Time subiu de fase: o grim\u00f3rio ganha p\u00e1ginas (e nunca perde enquanto o jogador continua renascido). */
+    private static void growPages(ServerPlayerEntity player, int time) {
+        int now = pagesOf(player);
+        int next = GrimoireStages.keepMax(now, GrimoireStages.pagesFor(time, ChronoConfig.REBIRTH_PAGES_4.get(),
+                ChronoConfig.REBIRTH_PAGES_16.get(), ChronoConfig.REBIRTH_PAGES_64.get(), Integer.MAX_VALUE));
+        if (next == now) return;
+        player.getPersistentData().putInt(TAG_PAGES, next);
+        broadcastState(player);
+        player.level.playSound(null, player.getX(), player.getY() + 1.0D, player.getZ(),
+                ChronoBubbleMod.STASIS_START.get(), SoundCategory.PLAYERS, 0.6F, 1.2F + 0.1F * Integer.numberOfTrailingZeros(next));
+        Msg.chat(player, TextFormatting.AQUA, "rebirth_pages", next, ChronoConfig.REBIRTH_UNLOCK_TIME.get());
     }
 
     private static void unlock(ServerPlayerEntity player) {
@@ -242,6 +267,7 @@ public class RebirthHandler {
         List<String> keys = stored.isEmpty() ? new ArrayList<String>() : Arrays.asList(stored.split(","));
         BlockCloverBridge.restoreAbilities(player, keys);
         data.putBoolean(TAG_REBORN, false);
+        data.putInt(TAG_PAGES, 0);
         data.putString(TAG_REMOVED, "");
         LAST_TIME.remove(player.getUUID());
         BlockCloverBridge.syncToClient(player);
@@ -263,8 +289,7 @@ public class RebirthHandler {
     /** Avisa o pr\u00f3prio jogador e quem o v\u00ea sobre o estado atual (grim\u00f3rio de uma p\u00e1gina ou normal). */
     private static void broadcastState(PlayerEntity player) {
         if (!(player instanceof ServerPlayerEntity)) return;
-        boolean reborn = player.getPersistentData().getBoolean(TAG_REBORN);
         ChronoBubbleMod.CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> player),
-                new RebirthPacket(player.getId(), reborn));
+                new RebirthPacket(player.getId(), pagesOf(player)));
     }
 }
