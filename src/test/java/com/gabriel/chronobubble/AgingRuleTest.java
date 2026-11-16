@@ -10,6 +10,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** {@link AgingRule}: tempo avançado no fim do Chrono Stasis (padrão: 3 Time por ponto de vida). */
 class AgingRuleTest {
     @Test
+    void rebornCasterNeverKills() {
+        AgingRule.Result r = AgingRule.resolve(20.0F, 20.0F, 100, 3.0F, false, 0.2F, false);   // pagaria a morte
+        assertFalse(r.kill);
+        assertEquals(19.0F, r.damage, 0.001F);
+        assertEquals(57, r.timeCost);
+        AgingRule.Result low = AgingRule.resolve(1.0F, 20.0F, 100, 3.0F, false, 0.2F, false);  // j\u00e1 com 1 de vida
+        assertSame(AgingRule.NOTHING, low);
+    }
+
+    @Test
     void enoughTimeKills() {
         AgingRule.Result r = AgingRule.resolve(20.0F, 20.0F, 100, 3.0F, false, 0.2F);   // zumbi: 60 de Time
         assertTrue(r.kill);

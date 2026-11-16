@@ -38,6 +38,8 @@ public class RebirthHandler {
     private static final String TAG_RESERVE = "chrono_bubble_reserve";
     /** P\u00e1ginas que o grim\u00f3rio j\u00e1 recuperou enquanto renascido (1, 4, 16 ou 64). */
     private static final String TAG_PAGES = "chrono_bubble_pages";
+    /** O Chrono Stasis normal j\u00e1 voltou durante o renascimento (sem matar no fim; o Grigora segue bloqueado). */
+    private static final String TAG_STASIS_BACK = "chrono_bubble_stasis_back";
 
     private static final Map<UUID, Integer> LAST_TIME = new HashMap<>();
     /** \u00daltima carga lida da Time Ressurection, para notar quando a pr\u00f3pria passiva do Block Clover age. */
@@ -134,6 +136,7 @@ public class RebirthHandler {
         to.putString(TAG_REMOVED, from.getString(TAG_REMOVED));
         to.putInt(TAG_RESERVE, from.getInt(TAG_RESERVE));
         to.putInt(TAG_PAGES, from.getInt(TAG_PAGES));
+        to.putBoolean(TAG_STASIS_BACK, from.getBoolean(TAG_STASIS_BACK));
     }
 
     @SubscribeEvent
@@ -192,6 +195,9 @@ public class RebirthHandler {
             return;
         }
         growPages(player, time);
+        if (!data.getBoolean(TAG_STASIS_BACK) && time >= ChronoConfig.REBIRTH_STASIS_TIME.get()) {
+            giveStasisBack(player);
+        }
 
         // Bloqueia a regenera\u00e7\u00e3o passiva (+1/s). Compara com o tick anterior em TODO tick: antes s\u00f3 olhava quando
         // tickCount % 20 == 0, e a regenera\u00e7\u00e3o do Block Clover que ca\u00eda em outro tick passava sem ser vista.
@@ -210,7 +216,7 @@ public class RebirthHandler {
 
         // Se o jogador reaprender os poderes bloqueados (menus do mod), tira de novo
         if (player.tickCount % 20 == 10) {
-            addRemoved(data, BlockCloverBridge.lockStasisAbilities(player));
+            addRemoved(data, BlockCloverBridge.lockStasisAbilities(player, data.getBoolean(TAG_STASIS_BACK)));
         }
     }
 
@@ -234,6 +240,7 @@ public class RebirthHandler {
         CompoundNBT data = player.getPersistentData();
         data.putBoolean(TAG_REBORN, true);
         data.putInt(TAG_PAGES, 1);
+        data.putBoolean(TAG_STASIS_BACK, false);
         BlockCloverBridge.setTime(player, 0);
         LAST_TIME.put(player.getUUID(), 0);
         addRemoved(data, BlockCloverBridge.lockStasisAbilities(player));
@@ -261,6 +268,20 @@ public class RebirthHandler {
         Msg.chat(player, TextFormatting.AQUA, "rebirth_pages", next, ChronoConfig.REBIRTH_UNLOCK_TIME.get());
     }
 
+    /**
+     * Chrono Stasis normal de volta no meio do renascimento (s\u00f3 se o jogador o tinha antes). Enquanto ele estiver
+     * renascido, o tempo avan\u00e7ado no fim do Stasis n\u00e3o mata ({@link TimeAging}). O Grigora espera o grim\u00f3rio completo.
+     */
+    private static void giveStasisBack(ServerPlayerEntity player) {
+        CompoundNBT data = player.getPersistentData();
+        data.putBoolean(TAG_STASIS_BACK, true);
+        String stored = data.getString(TAG_REMOVED);
+        if (!Arrays.asList(stored.split(",")).contains(BlockCloverBridge.KEY_STASIS)) return;   // n\u00e3o tinha
+        BlockCloverBridge.restoreAbilities(player, Arrays.asList(BlockCloverBridge.KEY_STASIS));
+        BlockCloverBridge.syncToClient(player);
+        Msg.chat(player, TextFormatting.AQUA, "rebirth_stasis_back", ChronoConfig.REBIRTH_UNLOCK_TIME.get());
+    }
+
     private static void unlock(ServerPlayerEntity player) {
         CompoundNBT data = player.getPersistentData();
         String stored = data.getString(TAG_REMOVED);
@@ -268,6 +289,7 @@ public class RebirthHandler {
         BlockCloverBridge.restoreAbilities(player, keys);
         data.putBoolean(TAG_REBORN, false);
         data.putInt(TAG_PAGES, 0);
+        data.putBoolean(TAG_STASIS_BACK, false);
         data.putString(TAG_REMOVED, "");
         LAST_TIME.remove(player.getUUID());
         BlockCloverBridge.syncToClient(player);

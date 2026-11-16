@@ -230,7 +230,8 @@ public class TimeAging {
 
         float health = target.getHealth() + target.getAbsorptionAmount();
         AgingRule.Result r = AgingRule.resolve(health, target.getMaxHealth(), BlockCloverBridge.getTime(caster),
-                ChronoConfig.f(ChronoConfig.AGING_TIME_PER_HP), isBoss(target), ChronoConfig.f(ChronoConfig.AGING_BOSS_FRACTION));
+                ChronoConfig.f(ChronoConfig.AGING_TIME_PER_HP), isBoss(target), ChronoConfig.f(ChronoConfig.AGING_BOSS_FRACTION),
+                !RebirthHandler.isReborn(caster));                              // renascido: o tempo avan\u00e7ado n\u00e3o mata
         LOG.info("[ChronoBubble/Tempo] tempo avan\u00e7ado em {}: vida {}, Time de {} = {}, resultado {}", target.getName().getString(),
                 health, caster.getName().getString(), BlockCloverBridge.getTime(caster), r);
         if (r.timeCost <= 0) {

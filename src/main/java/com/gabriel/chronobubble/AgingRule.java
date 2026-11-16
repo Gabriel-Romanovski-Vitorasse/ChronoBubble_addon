@@ -40,9 +40,18 @@ public final class AgingRule {
      * @param bossFraction dano máximo em chefes, em fração da vida máxima
      */
     public static Result resolve(float health, float maxHealth, int time, float perHp, boolean boss, float bossFraction) {
+        return resolve(health, maxHealth, time, perHp, boss, bossFraction, true);
+    }
+
+    /**
+     * Como {@link #resolve(float, float, int, float, boolean, float)}, mas com {@code canKill = false} o alvo nunca
+     * morre (fica com pelo menos 1 de vida), como nos chefes. Usado quando quem congelou est\u00e1 renascido.
+     */
+    public static Result resolve(float health, float maxHealth, int time, float perHp, boolean boss, float bossFraction,
+                                 boolean canKill) {
         if (health <= 0.0F || time <= 0 || perHp <= 0.0F) return NOTHING;
         int affordable = (int) Math.floor(time / perHp);                       // pontos de vida que o Time paga
-        if (!boss && affordable >= health) {
+        if (!boss && canKill && affordable >= health) {
             return new Result(true, health, (int) Math.ceil(health * perHp));
         }
         float damage = affordable;
@@ -50,7 +59,7 @@ public final class AgingRule {
             damage = Math.min(damage, (float) Math.floor(maxHealth * bossFraction));
             damage = Math.min(damage, health - 1.0F);                          // chefe nunca morre pelo tempo avançado
         } else {
-            damage = Math.min(damage, health);
+            damage = Math.min(damage, canKill ? health : health - 1.0F);
         }
         if (damage < 1.0F) return NOTHING;
         return new Result(false, damage, (int) Math.ceil(damage * perHp));
