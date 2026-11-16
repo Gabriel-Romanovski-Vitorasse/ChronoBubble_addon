@@ -2,6 +2,10 @@
 
 ## 1.2.0 (não lançado)
 
+- **Time Ressurection deixa o grimório com uma página.** Quando a passiva salva o jogador, seja no golpe fatal
+  tratado pelo addon, seja quando o Block Clover a dispara sozinho, ele fica no estado renascido (Time zerado, Chrono
+  Stasis bloqueado até roubar Time até `unlock_time`). A Swallowtail não é usada. Desligável com
+  `rebirth.ressurection_reborn`.
 - Versão nova para ser fácil saber qual `.jar` está instalado: o nome passa a ser `chrono_bubble-1.16.5-1.2.0.jar` e o log
   de inicialização mostra a versão.
 - Diagnóstico do soco do Chrono Stasis no `latest.log`, com os marcadores `[ChronoBubble/Tempo]` e

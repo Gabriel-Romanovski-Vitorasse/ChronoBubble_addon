@@ -378,5 +378,8 @@
   "config.chrono_bubble.rot_steal.require_combat_bar.tooltip": "true = only works while the combat bar is active",
   "msg.chrono_bubble.rot_no_target": "No target in your crosshair to steal time from.",
   "msg.chrono_bubble.rot_cooldown": "Rotting Time Steal on cooldown: %ss",
-  "msg.chrono_bubble.rot_start": "%s's time starts to rot"
+  "msg.chrono_bubble.rot_start": "%s's time starts to rot",
+  "msg.chrono_bubble.rebirth_ressurection": "Time Ressurection brought you back, but your grimoire was left with a single page: steal Time up to %s to restore it.",
+  "config.chrono_bubble.rebirth.ressurection_reborn": "Time Ressurection leaves a one-page grimoire",
+  "config.chrono_bubble.rebirth.ressurection_reborn.tooltip": "true = when the Time Ressurection passive saves the player (on a killing blow or on its own at low health), they come back with a one-page grimoire, like a rebirth. The Swallowtail is not used"
 }

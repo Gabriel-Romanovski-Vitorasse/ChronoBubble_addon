@@ -378,5 +378,8 @@
   "config.chrono_bubble.rot_steal.require_combat_bar.tooltip": "true = só funciona com a combat bar ativa",
   "msg.chrono_bubble.rot_no_target": "Nenhum alvo na mira para roubar o tempo.",
   "msg.chrono_bubble.rot_cooldown": "Time Steal apodrecedor em recarga: %ss",
-  "msg.chrono_bubble.rot_start": "O tempo de %s começa a apodrecer"
+  "msg.chrono_bubble.rot_start": "O tempo de %s começa a apodrecer",
+  "msg.chrono_bubble.rebirth_ressurection": "A Time Ressurection te trouxe de volta, mas o grimório ficou com uma página: roube Time até %s para restaurá-lo.",
+  "config.chrono_bubble.rebirth.ressurection_reborn": "Time Ressurection deixa o grimório com uma página",
+  "config.chrono_bubble.rebirth.ressurection_reborn.tooltip": "true = quando a passiva Time Ressurection salva o jogador (no golpe fatal ou sozinha, com a vida baixa), ele volta com o grimório de uma página, como no renascimento. A Swallowtail não é usada"
 }

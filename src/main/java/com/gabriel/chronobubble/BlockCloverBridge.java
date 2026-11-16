@@ -275,6 +275,18 @@ public class BlockCloverBridge {
         }
     }
 
+    /** Carga atual da Time Ressurection (-1 se o jogador n\u00e3o tem a passiva, se ela est\u00e1 pausada ou se n\u00e3o deu para ler). */
+    public static double ressurectionStrain(PlayerEntity player) {
+        init();
+        try {
+            Object p = unlockedPassive(player, ressurectionClass);
+            if (p == null || (Boolean) passiveIsPaused.invoke(p)) return -1.0D;
+            return (Double) ressurectionStrain.invoke(p);
+        } catch (Throwable t) {
+            return -1.0D;
+        }
+    }
+
     /** Zera a carga da Time Ressurection (como o Block Clover faz depois de us\u00e1-la). */
     public static void resetRessurection(PlayerEntity player) {
         init();

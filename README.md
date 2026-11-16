@@ -47,6 +47,8 @@ Todas as teclas podem ser trocadas em Opções → Controles → Chrono Bubble.
 - **A passiva Time Ressurection do Block Clover vem antes da Swallowtail.** Se ela estiver pronta (carga cheia e mais
   de 300 de Time), ela salva o jogador até de um golpe que mataria de uma vez, consumindo todo o Time como de costume,
   e a Swallowtail não é usada. Se não estiver pronta, vale o renascimento pela Swallowtail.
+  Em ambos os casos (golpe fatal ou a passiva agindo sozinha com a vida baixa), quem é salvo pela Time Ressurection
+  volta com o grimório de uma página, com as mesmas regras do renascimento (`rebirth.ressurection_reborn`).
 
 ### Restauração do tempo
 

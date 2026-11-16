@@ -38,6 +38,8 @@ public class RebirthHandler {
     private static final String TAG_RESERVE = "chrono_bubble_reserve";
 
     private static final Map<UUID, Integer> LAST_TIME = new HashMap<>();
+    /** \u00daltima carga lida da Time Ressurection, para notar quando a pr\u00f3pria passiva do Block Clover age. */
+    private static final Map<UUID, Double> LAST_STRAIN = new HashMap<>();
 
     /** O jogador est\u00e1 com o grim\u00f3rio de uma p\u00e1gina (renascido e ainda sem os poderes de volta). */
     public static boolean isReborn(PlayerEntity player) {
@@ -83,7 +85,29 @@ public class RebirthHandler {
         }
         player.level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 ChronoBubbleMod.STASIS_START.get(), SoundCategory.PLAYERS, 1.0F, 0.5F);
-        Msg.chat(player, TextFormatting.AQUA, "ressurection_saved");
+        LAST_STRAIN.put(player.getUUID(), 0.0D);                 // a detec\u00e7\u00e3o no tick n\u00e3o conta este de novo
+        if (ChronoConfig.REBIRTH_RESSURECTION_REBORN.get()) {
+            enterReborn(player);
+            Msg.chat(player, TextFormatting.AQUA, "rebirth_ressurection", ChronoConfig.REBIRTH_UNLOCK_TIME.get());
+        } else {
+            Msg.chat(player, TextFormatting.AQUA, "ressurection_saved");
+        }
+    }
+
+    /**
+     * A passiva do pr\u00f3prio Block Clover salvou o jogador (vida baixa, sem golpe fatal): a carga, que estava cheia,
+     * foi zerada junto com o Time. Checado a cada 10 ticks.
+     */
+    private static void watchRessurection(ServerPlayerEntity player) {
+        UUID id = player.getUUID();
+        double strain = BlockCloverBridge.ressurectionStrain(player);
+        Double last = LAST_STRAIN.put(id, strain);
+        if (strain < 0.0D || last == null) return;
+        if (last >= BlockCloverBridge.RESSURECTION_FULL_STRAIN && strain < BlockCloverBridge.RESSURECTION_FULL_STRAIN
+                && BlockCloverBridge.getTime(player) == 0 && player.isAlive()) {
+            enterReborn(player);
+            Msg.chat(player, TextFormatting.AQUA, "rebirth_ressurection", ChronoConfig.REBIRTH_UNLOCK_TIME.get());
+        }
     }
 
     /** LOWEST e sem receber eventos cancelados: se outro mod impedir a morte, a Swallowtail n\u00e3o \u00e9 esvaziada. */
@@ -122,6 +146,7 @@ public class RebirthHandler {
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         LAST_TIME.remove(event.getPlayer().getUUID());
+        LAST_STRAIN.remove(event.getPlayer().getUUID());
     }
 
     @SubscribeEvent
@@ -151,6 +176,9 @@ public class RebirthHandler {
 
         if (data.getBoolean(TAG_PENDING) && player.isAlive() && player.tickCount > 20) {
             applyRebirth(player);
+        }
+        if (player.tickCount % 10 == 0 && ChronoConfig.REBIRTH_RESSURECTION_REBORN.get() && !data.getBoolean(TAG_REBORN)) {
+            watchRessurection(player);
         }
         if (!data.getBoolean(TAG_REBORN)) return;
 
@@ -192,14 +220,20 @@ public class RebirthHandler {
 
         // renasceu: tudo zera (Time do jogador e qualquer Swallowtail que ainda esteja com ele, ex.: keepInventory)
         SwallowtailItem.drainAll(player);
+        enterReborn(player);
+        Msg.chat(player, TextFormatting.AQUA, "rebirth", used, ChronoConfig.REBIRTH_UNLOCK_TIME.get());
+        ChronoAdvancements.grant(player, ChronoAdvancements.REBIRTH);
+    }
+
+    /** Grim\u00f3rio de uma p\u00e1gina: Time zerado e Chrono Stasis bloqueado at\u00e9 roubar Time de novo. */
+    private static void enterReborn(ServerPlayerEntity player) {
+        CompoundNBT data = player.getPersistentData();
         data.putBoolean(TAG_REBORN, true);
         BlockCloverBridge.setTime(player, 0);
         LAST_TIME.put(player.getUUID(), 0);
         addRemoved(data, BlockCloverBridge.lockStasisAbilities(player));
         BlockCloverBridge.syncToClient(player);
         broadcastState(player);
-        Msg.chat(player, TextFormatting.AQUA, "rebirth", used, ChronoConfig.REBIRTH_UNLOCK_TIME.get());
-        ChronoAdvancements.grant(player, ChronoAdvancements.REBIRTH);
     }
 
     private static void unlock(ServerPlayerEntity player) {
