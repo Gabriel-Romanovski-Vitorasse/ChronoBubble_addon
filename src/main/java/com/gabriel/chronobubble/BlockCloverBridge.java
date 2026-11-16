@@ -398,13 +398,18 @@ public class BlockCloverBridge {
 
     /** Remove Chrono Stasis e Chrono Stasis Grigora do jogador. Devolve quais ele realmente tinha liberadas. */
     public static List<String> lockStasisAbilities(PlayerEntity player) {
+        return lockStasisAbilities(player, false);
+    }
+
+    /** Como {@link #lockStasisAbilities(PlayerEntity)}; com {@code keepStasis}, s\u00f3 o Grigora \u00e9 removido. */
+    public static List<String> lockStasisAbilities(PlayerEntity player, boolean keepStasis) {
         List<String> removed = new ArrayList<>();
         init();
         if (!abilitiesOk) return removed;
         try {
             Object data = abilityGet.invoke(null, player);
             if (data == null) return removed;
-            for (String key : new String[] { KEY_STASIS, KEY_GRIGORA }) {
+            for (String key : keepStasis ? new String[] { KEY_GRIGORA } : new String[] { KEY_STASIS, KEY_GRIGORA }) {
                 Object core = coreOf(key);
                 if (core == null) continue;
                 if ((Boolean) hasUnlocked.invoke(data, core)) {

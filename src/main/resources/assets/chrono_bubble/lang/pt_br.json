@@ -388,5 +388,8 @@
   "config.chrono_bubble.rebirth.pages_16_time.tooltip": "Com esse Time o grimório passa para 16 páginas",
   "config.chrono_bubble.rebirth.pages_64_time": "Time para 64 páginas",
   "config.chrono_bubble.rebirth.pages_64_time.tooltip": "Com esse Time o grimório passa para 64 páginas (o completo tem 72)",
-  "msg.chrono_bubble.rebirth_pages": "Seu grimório recuperou páginas: agora são %s. Grimório completo com %s de Time."
+  "msg.chrono_bubble.rebirth_pages": "Seu grimório recuperou páginas: agora são %s. Grimório completo com %s de Time.",
+  "msg.chrono_bubble.rebirth_stasis_back": "O Chrono Stasis voltou (equipe-o de novo), mas ainda não mata no fim. O Grigora volta com o grimório completo, com %s de Time.",
+  "config.chrono_bubble.rebirth.stasis_time": "Time para o Chrono Stasis voltar",
+  "config.chrono_bubble.rebirth.stasis_time.tooltip": "Com esse Time o Chrono Stasis normal volta (precisa equipar de novo), mas o tempo avançado no fim dele não mata até o grimório ficar completo. O Grigora só volta com o grimório completo"
 }

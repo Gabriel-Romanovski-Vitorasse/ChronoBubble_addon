@@ -2,6 +2,10 @@
 
 ## 1.2.0 (não lançado)
 
+- **Chrono Stasis volta aos 250 de Time durante o renascimento**, mas o tempo avançado no fim dele não mata até o
+  grimório ficar completo (o alvo fica com pelo menos 1 de vida). O Grigora continua bloqueado até o fim. Opção
+  `rebirth.stasis_time`.
+- README: explicação do limite de 1000 de Time do Time Steal do Block Clover.
 - **O grimório volta aos poucos.** Renascido, o jogador recupera páginas conforme o Time sobe: 1 página até 250,
   4 até 500, 16 até 750, 64 até 1000 e o grimório completo (com os poderes) a partir de 1000. Cada fase tem animação,
   som e aviso no chat, e as páginas não diminuem ao gastar Time. A opção `rebirth.unlock_time` (200) virou

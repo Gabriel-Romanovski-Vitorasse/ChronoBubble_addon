@@ -200,6 +200,7 @@ public final class ChronoConfig {
     public static final ForgeConfigSpec.IntValue SWALLOW_TRANSFER;
     public static final ForgeConfigSpec.BooleanValue REBIRTH_ENABLED;
     public static final ForgeConfigSpec.IntValue REBIRTH_UNLOCK_TIME;
+    public static final ForgeConfigSpec.IntValue REBIRTH_STASIS_TIME;
     public static final ForgeConfigSpec.IntValue REBIRTH_PAGES_4;
     public static final ForgeConfigSpec.IntValue REBIRTH_PAGES_16;
     public static final ForgeConfigSpec.IntValue REBIRTH_PAGES_64;
@@ -379,6 +380,7 @@ public final class ChronoConfig {
         section(s, "rebirth", true, "Renascimento (grim\u00f3rio de uma p\u00e1gina ap\u00f3s morrer). S\u00f3 acontece se houver Time guardado na Swallowtail; ao renascer, o Time do jogador e o da Swallowtail zeram.");
         REBIRTH_ENABLED = bool(s, "enabled", "Liga/desliga o renascimento", true);
         REBIRTH_UNLOCK_TIME = integer(s, "complete_time", "Time necess\u00e1rio para o grim\u00f3rio ficar completo e os poderes voltarem", 1000, 0, 1000000);
+        REBIRTH_STASIS_TIME = integer(s, "stasis_time", "Com esse Time o Chrono Stasis normal volta (precisa equipar de novo), mas o tempo avan\u00e7ado no fim dele n\u00e3o mata at\u00e9 o grim\u00f3rio ficar completo. O Grigora s\u00f3 volta com o grim\u00f3rio completo", 250, 0, 1000000);
         REBIRTH_PAGES_4 = integer(s, "pages_4_time", "Com esse Time o grim\u00f3rio passa de 1 para 4 p\u00e1ginas", 250, 0, 1000000);
         REBIRTH_PAGES_16 = integer(s, "pages_16_time", "Com esse Time o grim\u00f3rio passa para 16 p\u00e1ginas", 500, 0, 1000000);
         REBIRTH_PAGES_64 = integer(s, "pages_64_time", "Com esse Time o grim\u00f3rio passa para 64 p\u00e1ginas (o completo tem 72)", 750, 0, 1000000);
