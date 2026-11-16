@@ -2,6 +2,15 @@
 
 ## 1.2.0 (não lançado)
 
+- **O grimório volta aos poucos.** Renascido, o jogador recupera páginas conforme o Time sobe: 1 página até 250,
+  4 até 500, 16 até 750, 64 até 1000 e o grimório completo (com os poderes) a partir de 1000. Cada fase tem animação,
+  som e aviso no chat, e as páginas não diminuem ao gastar Time. A opção `rebirth.unlock_time` (200) virou
+  `rebirth.complete_time` (1000); os limites de cada fase também são configuráveis.
+- Protocolo de rede 4: cliente e servidor precisam da mesma versão do addon.
+- **Time Ressurection deixa o grimório com uma página.** Quando a passiva salva o jogador, seja no golpe fatal
+  tratado pelo addon, seja quando o Block Clover a dispara sozinho, ele fica no estado renascido (Time zerado, Chrono
+  Stasis bloqueado até o grimório ficar completo). A Swallowtail não é usada. Desligável com
+  `rebirth.ressurection_reborn`.
 - Versão nova para ser fácil saber qual `.jar` está instalado: o nome passa a ser `chrono_bubble-1.16.5-1.2.0.jar` e o log
   de inicialização mostra a versão.
 - Diagnóstico do soco do Chrono Stasis no `latest.log`, com os marcadores `[ChronoBubble/Tempo]` e

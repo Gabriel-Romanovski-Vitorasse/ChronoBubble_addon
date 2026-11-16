@@ -200,7 +200,11 @@ public final class ChronoConfig {
     public static final ForgeConfigSpec.IntValue SWALLOW_TRANSFER;
     public static final ForgeConfigSpec.BooleanValue REBIRTH_ENABLED;
     public static final ForgeConfigSpec.IntValue REBIRTH_UNLOCK_TIME;
+    public static final ForgeConfigSpec.IntValue REBIRTH_PAGES_4;
+    public static final ForgeConfigSpec.IntValue REBIRTH_PAGES_16;
+    public static final ForgeConfigSpec.IntValue REBIRTH_PAGES_64;
     public static final ForgeConfigSpec.BooleanValue REBIRTH_BLOCK_REGEN;
+    public static final ForgeConfigSpec.BooleanValue REBIRTH_RESSURECTION_REBORN;
     public static final ForgeConfigSpec.BooleanValue REBIRTH_RESSURECTION_FIRST;
     public static final ForgeConfigSpec.BooleanValue HUD_TIME_GAIN;
     public static final ForgeConfigSpec.IntValue HUD_MIN_GAIN;
@@ -374,8 +378,12 @@ public final class ChronoConfig {
 
         section(s, "rebirth", true, "Renascimento (grim\u00f3rio de uma p\u00e1gina ap\u00f3s morrer). S\u00f3 acontece se houver Time guardado na Swallowtail; ao renascer, o Time do jogador e o da Swallowtail zeram.");
         REBIRTH_ENABLED = bool(s, "enabled", "Liga/desliga o renascimento", true);
-        REBIRTH_UNLOCK_TIME = integer(s, "unlock_time", "Time necess\u00e1rio para os poderes e o grim\u00f3rio voltarem", 200, 0, 1000000);
+        REBIRTH_UNLOCK_TIME = integer(s, "complete_time", "Time necess\u00e1rio para o grim\u00f3rio ficar completo e os poderes voltarem", 1000, 0, 1000000);
+        REBIRTH_PAGES_4 = integer(s, "pages_4_time", "Com esse Time o grim\u00f3rio passa de 1 para 4 p\u00e1ginas", 250, 0, 1000000);
+        REBIRTH_PAGES_16 = integer(s, "pages_16_time", "Com esse Time o grim\u00f3rio passa para 16 p\u00e1ginas", 500, 0, 1000000);
+        REBIRTH_PAGES_64 = integer(s, "pages_64_time", "Com esse Time o grim\u00f3rio passa para 64 p\u00e1ginas (o completo tem 72)", 750, 0, 1000000);
         REBIRTH_BLOCK_REGEN = bool(s, "block_passive_regen", "true = sem regenera\u00e7\u00e3o passiva de Time at\u00e9 desbloquear", true);
+        REBIRTH_RESSURECTION_REBORN = bool(s, "ressurection_reborn", "true = quando a passiva Time Ressurection salva o jogador (no golpe fatal ou sozinha, com a vida baixa), ele volta com o grim\u00f3rio de uma p\u00e1gina, como no renascimento. A Swallowtail n\u00e3o \u00e9 usada", true);
         REBIRTH_RESSURECTION_FIRST = bool(s, "time_ressurection_first", "true = ao receber um golpe fatal, a passiva Time Ressurection age primeiro se estiver pronta (carga cheia e mais de 300 de Time; consome todo o Time) e a Swallowtail fica intacta. Se n\u00e3o estiver pronta, vale o renascimento pela Swallowtail.", true);
         s.pop();
         SERVER_SPEC = s.build();

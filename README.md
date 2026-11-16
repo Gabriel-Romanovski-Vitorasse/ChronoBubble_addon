@@ -43,10 +43,22 @@ Todas as teclas podem ser trocadas em Opções → Controles → Chrono Bubble.
 - Ao renascer, **tudo zera**: o Time do jogador e o Time de todas as Swallowtails que ele carregava.
 - Renascido, o jogador fica com o grimório de uma página: Chrono Stasis e Chrono Stasis Grigora ficam bloqueados,
   não há regeneração passiva de Time e não dá para sacar Time da Swallowtail. O Time só volta roubando.
-- Ao chegar ao `unlock_time` (padrão 200), o grimório e os poderes voltam (é preciso equipá-los de novo).
+- O grimório volta aos poucos conforme o Time sobe (as páginas nunca diminuem, mesmo gastando Time):
+
+  | Time | Grimório |
+  |---|---|
+  | menos de 250 | 1 página |
+  | 250 a 499 | 4 páginas |
+  | 500 a 749 | 16 páginas |
+  | 750 a 999 | 64 páginas |
+  | 1000 ou mais | completo (72 páginas), e os poderes voltam (é preciso equipá-los de novo) |
+
+  Os limites ficam em `rebirth.pages_4_time`, `pages_16_time`, `pages_64_time` e `complete_time`.
 - **A passiva Time Ressurection do Block Clover vem antes da Swallowtail.** Se ela estiver pronta (carga cheia e mais
   de 300 de Time), ela salva o jogador até de um golpe que mataria de uma vez, consumindo todo o Time como de costume,
   e a Swallowtail não é usada. Se não estiver pronta, vale o renascimento pela Swallowtail.
+  Em ambos os casos (golpe fatal ou a passiva agindo sozinha com a vida baixa), quem é salvo pela Time Ressurection
+  volta com o grimório de uma página, com as mesmas regras do renascimento (`rebirth.ressurection_reborn`).
 
 ### Restauração do tempo
 

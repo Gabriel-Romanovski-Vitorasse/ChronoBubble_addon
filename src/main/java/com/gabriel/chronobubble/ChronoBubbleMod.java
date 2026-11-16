@@ -25,7 +25,7 @@ public class ChronoBubbleMod {
      * Cliente e servidor precisam ter o addon na MESMA vers\u00e3o: quem n\u00e3o tiver (ou tiver outra) \u00e9 recusado ao
      * entrar, com uma mensagem clara, em vez de entrar e receber pacotes que n\u00e3o entende.
      */
-    private static final String PROTOCOL = "3";
+    private static final String PROTOCOL = "4";
 
     /** Canal usado para o servidor avisar os clientes de quem est\u00e1 congelado. */
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
