@@ -40,6 +40,8 @@ public class RebirthHandler {
     private static final String TAG_PAGES = "chrono_bubble_pages";
     /** O Chrono Stasis normal j\u00e1 voltou durante o renascimento (sem matar no fim; o Grigora segue bloqueado). */
     private static final String TAG_STASIS_BACK = "chrono_bubble_stasis_back";
+    /** Slot da combat bar onde cada habilidade bloqueada estava ("stasis:3,grigora:5"), para voltar ao mesmo lugar. */
+    private static final String TAG_SLOTS = "chrono_bubble_slots";
 
     private static final Map<UUID, Integer> LAST_TIME = new HashMap<>();
     /** \u00daltima carga lida da Time Ressurection, para notar quando a pr\u00f3pria passiva do Block Clover age. */
@@ -137,6 +139,7 @@ public class RebirthHandler {
         to.putInt(TAG_RESERVE, from.getInt(TAG_RESERVE));
         to.putInt(TAG_PAGES, from.getInt(TAG_PAGES));
         to.putBoolean(TAG_STASIS_BACK, from.getBoolean(TAG_STASIS_BACK));
+        to.putString(TAG_SLOTS, from.getString(TAG_SLOTS));
     }
 
     @SubscribeEvent
@@ -147,6 +150,8 @@ public class RebirthHandler {
     @SubscribeEvent
     public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         broadcastState(event.getPlayer());
+        // c\u00f3pias velhas do Chrono Stasis/Grigora presas na combat bar (deixadas por vers\u00f5es anteriores do addon)
+        if (BlockCloverBridge.repairEquipped(event.getPlayer())) BlockCloverBridge.syncToClient(event.getPlayer());
     }
 
     @SubscribeEvent
@@ -216,7 +221,7 @@ public class RebirthHandler {
 
         // Se o jogador reaprender os poderes bloqueados (menus do mod), tira de novo
         if (player.tickCount % 20 == 10) {
-            addRemoved(data, BlockCloverBridge.lockStasisAbilities(player, data.getBoolean(TAG_STASIS_BACK)));
+            lock(player, data.getBoolean(TAG_STASIS_BACK));
         }
     }
 
@@ -243,7 +248,7 @@ public class RebirthHandler {
         data.putBoolean(TAG_STASIS_BACK, false);
         BlockCloverBridge.setTime(player, 0);
         LAST_TIME.put(player.getUUID(), 0);
-        addRemoved(data, BlockCloverBridge.lockStasisAbilities(player));
+        lock(player, false);
         BlockCloverBridge.syncToClient(player);
         broadcastState(player);
     }
@@ -277,7 +282,7 @@ public class RebirthHandler {
         data.putBoolean(TAG_STASIS_BACK, true);
         String stored = data.getString(TAG_REMOVED);
         if (!Arrays.asList(stored.split(",")).contains(BlockCloverBridge.KEY_STASIS)) return;   // n\u00e3o tinha
-        BlockCloverBridge.restoreAbilities(player, Arrays.asList(BlockCloverBridge.KEY_STASIS));
+        BlockCloverBridge.restoreAbilities(player, Arrays.asList(BlockCloverBridge.KEY_STASIS), parseSlots(data.getString(TAG_SLOTS)));
         BlockCloverBridge.syncToClient(player);
         Msg.chat(player, TextFormatting.AQUA, "rebirth_stasis_back", ChronoConfig.REBIRTH_UNLOCK_TIME.get());
     }
@@ -286,7 +291,8 @@ public class RebirthHandler {
         CompoundNBT data = player.getPersistentData();
         String stored = data.getString(TAG_REMOVED);
         List<String> keys = stored.isEmpty() ? new ArrayList<String>() : Arrays.asList(stored.split(","));
-        BlockCloverBridge.restoreAbilities(player, keys);
+        BlockCloverBridge.restoreAbilities(player, keys, parseSlots(data.getString(TAG_SLOTS)));
+        data.putString(TAG_SLOTS, "");
         data.putBoolean(TAG_REBORN, false);
         data.putInt(TAG_PAGES, 0);
         data.putBoolean(TAG_STASIS_BACK, false);
@@ -297,6 +303,41 @@ public class RebirthHandler {
         player.level.playSound(null, player.getX(), player.getY() + 1.0D, player.getZ(),
                 ChronoBubbleMod.STASIS_START.get(), SoundCategory.PLAYERS, 1.0F, 1.0F);
         Msg.bar(player, TextFormatting.AQUA, "rebirth_unlocked");
+    }
+
+    /** Bloqueia as habilidades e guarda em que slot da combat bar cada uma estava. */
+    private static void lock(ServerPlayerEntity player, boolean keepStasis) {
+        CompoundNBT data = player.getPersistentData();
+        Map<String, Integer> slots = parseSlots(data.getString(TAG_SLOTS));
+        int before = slots.size();
+        List<String> removed = BlockCloverBridge.lockStasisAbilities(player, keepStasis, slots);
+        addRemoved(data, removed);
+        if (slots.size() != before) data.putString(TAG_SLOTS, formatSlots(slots));
+        if (!removed.isEmpty() || slots.size() != before) BlockCloverBridge.syncToClient(player);
+    }
+
+    /** "stasis:3,grigora:5" para um mapa (entradas inv\u00e1lidas s\u00e3o ignoradas). */
+    static Map<String, Integer> parseSlots(String stored) {
+        Map<String, Integer> slots = new java.util.LinkedHashMap<>();
+        if (stored == null || stored.isEmpty()) return slots;
+        for (String part : stored.split(",")) {
+            int sep = part.indexOf(':');
+            if (sep <= 0) continue;
+            try {
+                slots.put(part.substring(0, sep), Integer.parseInt(part.substring(sep + 1)));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return slots;
+    }
+
+    static String formatSlots(Map<String, Integer> slots) {
+        StringBuilder b = new StringBuilder();
+        for (Map.Entry<String, Integer> e : slots.entrySet()) {
+            if (b.length() > 0) b.append(',');
+            b.append(e.getKey()).append(':').append(e.getValue());
+        }
+        return b.toString();
     }
 
     private static void addRemoved(CompoundNBT data, List<String> newlyRemoved) {

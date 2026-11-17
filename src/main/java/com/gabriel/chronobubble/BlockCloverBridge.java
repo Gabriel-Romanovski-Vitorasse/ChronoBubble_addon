@@ -14,6 +14,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Acessa o Block Clover por reflex\u00e3o (sem depender do .jar para compilar).
@@ -78,7 +79,9 @@ public class BlockCloverBridge {
 
     private static Method statsGet, getAttribute, getSecondAttribute, hasGrimoire, inCombat, getTime, setTime;
     private static Method getMana, alterMana, alterTime, alterExperience;
-    private static Method abilityGet, hasUnlocked, remUnlocked, remEquipped, addUnlocked;
+    private static Method abilityGet, hasUnlocked, remUnlocked, addUnlocked, getUnlockedByCore, abilityCore;
+    /** Campo {@code equippedAbilities} (Ability[]) da implementa\u00e7\u00e3o dos dados de habilidade, achado na primeira vez. */
+    private static java.lang.reflect.Field equippedField;
     private static Method sendTo;
     private static Method getUnlockedFiltered, passiveIsPaused;
     private static Class<?> passiveClass, magicZoneClass, ressurectionClass;
@@ -116,7 +119,8 @@ public class BlockCloverBridge {
                 abilityGet = capAbility.getMethod("get", LivingEntity.class);
                 hasUnlocked = data.getMethod("hasUnlockedAbility", core);
                 remUnlocked = data.getMethod("removeUnlockedAbility", core);
-                remEquipped = data.getMethod("removeEquippedAbility", core);
+                getUnlockedByCore = data.getMethod("getUnlockedAbility", core);
+                abilityCore = Class.forName(PKG + "api.ability.Ability").getMethod("getCore");
                 addUnlocked = data.getMethod("addUnlockedAbility", PlayerEntity.class, core);
                 coreStasis = Class.forName(CLS_STASIS).getField("INSTANCE").get(null);
                 coreGrigora = Class.forName(CLS_GRIGORA).getField("INSTANCE").get(null);
@@ -398,43 +402,131 @@ public class BlockCloverBridge {
 
     /** Remove Chrono Stasis e Chrono Stasis Grigora do jogador. Devolve quais ele realmente tinha liberadas. */
     public static List<String> lockStasisAbilities(PlayerEntity player) {
-        return lockStasisAbilities(player, false);
+        return lockStasisAbilities(player, false, null);
     }
 
-    /** Como {@link #lockStasisAbilities(PlayerEntity)}; com {@code keepStasis}, s\u00f3 o Grigora \u00e9 removido. */
-    public static List<String> lockStasisAbilities(PlayerEntity player, boolean keepStasis) {
+    /**
+     * Remove Chrono Stasis e Chrono Stasis Grigora (com {@code keepStasis}, s\u00f3 o Grigora) e devolve quais o jogador
+     * realmente tinha liberadas. O slot em que cada uma estava na combat bar vai para {@code slotsOut} (se n\u00e3o for null
+     * e ainda n\u00e3o tiver aquela habilidade), para devolv\u00ea-la ao mesmo lugar depois.
+     * <p>
+     * Os slots s\u00e3o limpos direto no vetor de habilidades equipadas: o {@code removeEquippedAbility} do Block Clover
+     * esvazia o primeiro slot ocupado, seja qual for a habilidade nele, e antes a habilidade removida ficava esquecida
+     * no slot, o que fazia as habilidades "pularem" de slot quando voltavam.
+     */
+    public static List<String> lockStasisAbilities(PlayerEntity player, boolean keepStasis, Map<String, Integer> slotsOut) {
         List<String> removed = new ArrayList<>();
         init();
         if (!abilitiesOk) return removed;
         try {
             Object data = abilityGet.invoke(null, player);
             if (data == null) return removed;
+            Object[] equipped = equipped(data);
             for (String key : keepStasis ? new String[] { KEY_GRIGORA } : new String[] { KEY_STASIS, KEY_GRIGORA }) {
                 Object core = coreOf(key);
                 if (core == null) continue;
+                if (equipped != null) {
+                    for (int i = 0; i < equipped.length; i++) {
+                        if (equipped[i] != null && abilityCore.invoke(equipped[i]) == core) {
+                            if (slotsOut != null && !slotsOut.containsKey(key)) slotsOut.put(key, i);
+                            equipped[i] = null;
+                        }
+                    }
+                }
                 if ((Boolean) hasUnlocked.invoke(data, core)) {
                     remUnlocked.invoke(data, core);
                     removed.add(key);
                 }
-                remEquipped.invoke(data, core);
             }
         } catch (Throwable ignored) {
         }
         return removed;
     }
 
-    /** Devolve as habilidades removidas antes (o jogador precisa equip\u00e1-las de novo nos slots). */
+    /** Devolve as habilidades removidas antes, cada uma no slot da combat bar onde estava (se ele ainda estiver livre). */
     public static void restoreAbilities(PlayerEntity player, Collection<String> keys) {
+        restoreAbilities(player, keys, null);
+    }
+
+    public static void restoreAbilities(PlayerEntity player, Collection<String> keys, Map<String, Integer> slots) {
         init();
         if (!abilitiesOk) return;
         try {
             Object data = abilityGet.invoke(null, player);
             if (data == null) return;
+            Object[] equipped = equipped(data);
             for (String key : keys) {
                 Object core = coreOf(key);
-                if (core != null && !(Boolean) hasUnlocked.invoke(data, core)) addUnlocked.invoke(data, player, core);
+                if (core == null) continue;
+                if (!(Boolean) hasUnlocked.invoke(data, core)) addUnlocked.invoke(data, player, core);
+                Integer slot = slots == null ? null : slots.get(key);
+                if (equipped == null || slot == null || slot < 0 || slot >= equipped.length || equipped[slot] != null) continue;
+                if (slotOf(equipped, core) >= 0) continue;                       // j\u00e1 est\u00e1 equipada em outro slot
+                equipped[slot] = getUnlockedByCore.invoke(data, core);
             }
         } catch (Throwable ignored) {
+        }
+    }
+
+    /**
+     * Conserta a combat bar de quem ficou com uma c\u00f3pia velha do Chrono Stasis ou do Grigora num slot (vers\u00f5es
+     * anteriores do addon deixavam): troca pela habilidade liberada atual, ou esvazia o slot se ela n\u00e3o est\u00e1 liberada
+     * ou j\u00e1 aparece em outro slot.
+     *
+     * @return true se mudou alguma coisa
+     */
+    public static boolean repairEquipped(PlayerEntity player) {
+        init();
+        if (!abilitiesOk) return false;
+        boolean changed = false;
+        try {
+            Object data = abilityGet.invoke(null, player);
+            Object[] equipped = data == null ? null : equipped(data);
+            if (equipped == null) return false;
+            for (String key : new String[] { KEY_STASIS, KEY_GRIGORA }) {
+                Object core = coreOf(key);
+                if (core == null) continue;
+                Object current = getUnlockedByCore.invoke(data, core);
+                boolean placed = false;
+                for (int i = 0; i < equipped.length; i++) {
+                    if (equipped[i] == null || abilityCore.invoke(equipped[i]) != core) continue;
+                    Object want = current == null || placed ? null : current;
+                    if (equipped[i] != want) {
+                        equipped[i] = want;
+                        changed = true;
+                    }
+                    if (want != null) placed = true;
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return changed;
+    }
+
+    private static int slotOf(Object[] equipped, Object core) throws Exception {
+        for (int i = 0; i < equipped.length; i++) {
+            if (equipped[i] != null && abilityCore.invoke(equipped[i]) == core) return i;
+        }
+        return -1;
+    }
+
+    /** O vetor de habilidades equipadas (o pr\u00f3prio, n\u00e3o uma c\u00f3pia), ou null se n\u00e3o deu para achar. */
+    private static Object[] equipped(Object data) {
+        try {
+            if (equippedField == null) {
+                for (Class<?> c = data.getClass(); c != null && equippedField == null; c = c.getSuperclass()) {
+                    for (java.lang.reflect.Field f : c.getDeclaredFields()) {
+                        if (f.getType().isArray() && f.getName().equals("equippedAbilities")) {
+                            f.setAccessible(true);
+                            equippedField = f;
+                            break;
+                        }
+                    }
+                }
+            }
+            return equippedField == null ? null : (Object[]) equippedField.get(data);
+        } catch (Throwable t) {
+            return null;
         }
     }
 

@@ -2,6 +2,10 @@
 
 ## 1.2.0 (não lançado)
 
+- **Combat bar: habilidades não pulam mais de slot ao voltar do renascimento.** Ao bloquear, o Chrono Stasis e o
+  Grigora ficavam esquecidos no slot (o `removeEquippedAbility` do Block Clover não serve: ele esvazia o primeiro slot
+  ocupado, seja qual for a habilidade). Agora o slot é limpo direto, a habilidade volta para o mesmo slot de antes, e
+  ao entrar no mundo a combat bar de quem ficou com uma cópia velha é consertada.
 - **Chrono Stasis volta aos 250 de Time durante o renascimento**, mas o tempo avançado no fim dele não mata até o
   grimório ficar completo (o alvo fica com pelo menos 1 de vida). O Grigora continua bloqueado até o fim. Opção
   `rebirth.stasis_time`.
