@@ -2,6 +2,10 @@
 
 ## 1.2.0 (não lançado)
 
+- **Renascido não perde mais habilidades: elas só não funcionam.** Tirar e devolver o Chrono Stasis e o Grigora
+  bagunçava a combat bar do Block Clover. Agora elas ficam no lugar e o uso é cancelado com a mensagem "Você não está
+  forte o suficiente" (o Chrono Stasis volta a funcionar com 250 de Time, o Grigora com o grimório completo). Quem
+  ficou sem elas por causa de uma versão anterior recebe de volta ao entrar no mundo.
 - **Combat bar: habilidades não pulam mais de slot ao voltar do renascimento.** Ao bloquear, o Chrono Stasis e o
   Grigora ficavam esquecidos no slot (o `removeEquippedAbility` do Block Clover não serve: ele esvazia o primeiro slot
   ocupado, seja qual for a habilidade). Agora o slot é limpo direto, a habilidade volta para o mesmo slot de antes, e

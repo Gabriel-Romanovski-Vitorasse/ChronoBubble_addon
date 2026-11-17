@@ -400,54 +400,10 @@ public class BlockCloverBridge {
         return KEY_STASIS.equals(key) ? coreStasis : coreGrigora;
     }
 
-    /** Remove Chrono Stasis e Chrono Stasis Grigora do jogador. Devolve quais ele realmente tinha liberadas. */
-    public static List<String> lockStasisAbilities(PlayerEntity player) {
-        return lockStasisAbilities(player, false, null);
-    }
-
     /**
-     * Remove Chrono Stasis e Chrono Stasis Grigora (com {@code keepStasis}, s\u00f3 o Grigora) e devolve quais o jogador
-     * realmente tinha liberadas. O slot em que cada uma estava na combat bar vai para {@code slotsOut} (se n\u00e3o for null
-     * e ainda n\u00e3o tiver aquela habilidade), para devolv\u00ea-la ao mesmo lugar depois.
-     * <p>
-     * Os slots s\u00e3o limpos direto no vetor de habilidades equipadas: o {@code removeEquippedAbility} do Block Clover
-     * esvazia o primeiro slot ocupado, seja qual for a habilidade nele, e antes a habilidade removida ficava esquecida
-     * no slot, o que fazia as habilidades "pularem" de slot quando voltavam.
+     * Devolve habilidades tiradas por vers\u00f5es anteriores do addon, cada uma no slot da combat bar onde estava (se ele
+     * ainda estiver livre). O addon n\u00e3o tira mais habilidades de ningu\u00e9m: o renascido s\u00f3 n\u00e3o consegue us\u00e1-las.
      */
-    public static List<String> lockStasisAbilities(PlayerEntity player, boolean keepStasis, Map<String, Integer> slotsOut) {
-        List<String> removed = new ArrayList<>();
-        init();
-        if (!abilitiesOk) return removed;
-        try {
-            Object data = abilityGet.invoke(null, player);
-            if (data == null) return removed;
-            Object[] equipped = equipped(data);
-            for (String key : keepStasis ? new String[] { KEY_GRIGORA } : new String[] { KEY_STASIS, KEY_GRIGORA }) {
-                Object core = coreOf(key);
-                if (core == null) continue;
-                if (equipped != null) {
-                    for (int i = 0; i < equipped.length; i++) {
-                        if (equipped[i] != null && abilityCore.invoke(equipped[i]) == core) {
-                            if (slotsOut != null && !slotsOut.containsKey(key)) slotsOut.put(key, i);
-                            equipped[i] = null;
-                        }
-                    }
-                }
-                if ((Boolean) hasUnlocked.invoke(data, core)) {
-                    remUnlocked.invoke(data, core);
-                    removed.add(key);
-                }
-            }
-        } catch (Throwable ignored) {
-        }
-        return removed;
-    }
-
-    /** Devolve as habilidades removidas antes, cada uma no slot da combat bar onde estava (se ele ainda estiver livre). */
-    public static void restoreAbilities(PlayerEntity player, Collection<String> keys) {
-        restoreAbilities(player, keys, null);
-    }
-
     public static void restoreAbilities(PlayerEntity player, Collection<String> keys, Map<String, Integer> slots) {
         init();
         if (!abilitiesOk) return;

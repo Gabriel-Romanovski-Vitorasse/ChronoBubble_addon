@@ -71,6 +71,7 @@ public class ChronoBubbleMod {
         CHANNEL.registerMessage(10, HopGhostPacket.class, HopGhostPacket::encode, HopGhostPacket::decode, HopGhostPacket::handle);
         CHANNEL.registerMessage(11, RotPacket.class, RotPacket::encode, RotPacket::decode, RotPacket::handle);
         ChronoThrowHandler.register();
+        RebirthHandler.registerAbilityBlock();
         MinecraftForge.EVENT_BUS.register(ChronoZone.INSTANCE);         // habilidades com mana por segundo
         MinecraftForge.EVENT_BUS.register(TimeAcceleration.INSTANCE);
     }

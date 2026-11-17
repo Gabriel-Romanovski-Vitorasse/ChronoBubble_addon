@@ -150,6 +150,7 @@ public class RebirthHandler {
     @SubscribeEvent
     public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         broadcastState(event.getPlayer());
+        if (event.getPlayer() instanceof ServerPlayerEntity) giveBackRemoved((ServerPlayerEntity) event.getPlayer());
         // c\u00f3pias velhas do Chrono Stasis/Grigora presas na combat bar (deixadas por vers\u00f5es anteriores do addon)
         if (BlockCloverBridge.repairEquipped(event.getPlayer())) BlockCloverBridge.syncToClient(event.getPlayer());
     }
@@ -174,6 +175,51 @@ public class RebirthHandler {
             ChronoBubbleMod.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity) event.getPlayer()),
                     new RebirthPacket(target.getId(), pagesOf(target)));
         }
+    }
+
+    // ---------- Habilidades bloqueadas ----------
+
+    /**
+     * O jogador renascido continua com o Chrono Stasis e o Grigora (tirar e devolver habilidades bagun\u00e7ava a combat
+     * bar do Block Clover); elas s\u00f3 n\u00e3o funcionam. O Chrono Stasis volta a funcionar com {@code rebirth.stasis_time}
+     * de Time e o Grigora com o grim\u00f3rio completo.
+     */
+    public static boolean canUse(PlayerEntity player, String key) {
+        CompoundNBT data = player.getPersistentData();
+        if (!data.getBoolean(TAG_REBORN)) return true;
+        return BlockCloverBridge.KEY_STASIS.equals(key) && data.getBoolean(TAG_STASIS_BACK);
+    }
+
+    /** Escuta o uso de habilidade do Block Clover com prioridade m\u00e1xima, antes de qualquer outra parte do addon. */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public static void registerAbilityBlock() {
+        try {
+            Class<?> use = Class.forName(BlockCloverBridge.CLS_ABILITY_USE_EVENT, false, RebirthHandler.class.getClassLoader());
+            java.util.function.Consumer<net.minecraftforge.eventbus.api.Event> handler = RebirthHandler::onAbilityUse;
+            net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, false, (Class) use,
+                    (java.util.function.Consumer) handler);
+        } catch (Throwable ignored) {
+            // Block Clover ausente: nada a bloquear
+        }
+    }
+
+    private static void onAbilityUse(net.minecraftforge.eventbus.api.Event event) {
+        if (!ChronoConfig.REBIRTH_ENABLED.get() || !(event instanceof PlayerEvent)) return;
+        if (!ChronoThrowHandler.actsOn(event)) return;
+        PlayerEntity player = ((PlayerEvent) event).getPlayer();
+        String name = BlockCloverBridge.abilityClassName(event);
+        String key = BlockCloverBridge.CLS_STASIS.equals(name) ? BlockCloverBridge.KEY_STASIS
+                : BlockCloverBridge.CLS_GRIGORA.equals(name) ? BlockCloverBridge.KEY_GRIGORA : null;
+        if (key == null || canUse(player, key)) return;
+        try {
+            event.setCanceled(true);
+        } catch (Throwable t) {
+            return;
+        }
+        if (player.level.isClientSide) return;
+        boolean stasis = BlockCloverBridge.KEY_STASIS.equals(key);
+        Msg.bar(player, TextFormatting.RED, stasis ? "not_strong_stasis" : "not_strong_grigora",
+                stasis ? ChronoConfig.REBIRTH_STASIS_TIME.get() : ChronoConfig.REBIRTH_UNLOCK_TIME.get());
     }
 
     // ---------- Tick do servidor ----------
@@ -219,10 +265,6 @@ public class RebirthHandler {
         }
         LAST_TIME.put(id, time);
 
-        // Se o jogador reaprender os poderes bloqueados (menus do mod), tira de novo
-        if (player.tickCount % 20 == 10) {
-            lock(player, data.getBoolean(TAG_STASIS_BACK));
-        }
     }
 
     // ---------- Estados ----------
@@ -248,7 +290,6 @@ public class RebirthHandler {
         data.putBoolean(TAG_STASIS_BACK, false);
         BlockCloverBridge.setTime(player, 0);
         LAST_TIME.put(player.getUUID(), 0);
-        lock(player, false);
         BlockCloverBridge.syncToClient(player);
         broadcastState(player);
     }
@@ -278,25 +319,17 @@ public class RebirthHandler {
      * renascido, o tempo avan\u00e7ado no fim do Stasis n\u00e3o mata ({@link TimeAging}). O Grigora espera o grim\u00f3rio completo.
      */
     private static void giveStasisBack(ServerPlayerEntity player) {
-        CompoundNBT data = player.getPersistentData();
-        data.putBoolean(TAG_STASIS_BACK, true);
-        String stored = data.getString(TAG_REMOVED);
-        if (!Arrays.asList(stored.split(",")).contains(BlockCloverBridge.KEY_STASIS)) return;   // n\u00e3o tinha
-        BlockCloverBridge.restoreAbilities(player, Arrays.asList(BlockCloverBridge.KEY_STASIS), parseSlots(data.getString(TAG_SLOTS)));
-        BlockCloverBridge.syncToClient(player);
+        player.getPersistentData().putBoolean(TAG_STASIS_BACK, true);
+        if (!BlockCloverBridge.hasChronoStasis(player)) return;                 // n\u00e3o tem o Chrono Stasis
         Msg.chat(player, TextFormatting.AQUA, "rebirth_stasis_back", ChronoConfig.REBIRTH_UNLOCK_TIME.get());
     }
 
     private static void unlock(ServerPlayerEntity player) {
         CompoundNBT data = player.getPersistentData();
-        String stored = data.getString(TAG_REMOVED);
-        List<String> keys = stored.isEmpty() ? new ArrayList<String>() : Arrays.asList(stored.split(","));
-        BlockCloverBridge.restoreAbilities(player, keys, parseSlots(data.getString(TAG_SLOTS)));
-        data.putString(TAG_SLOTS, "");
+        giveBackRemoved(player);
         data.putBoolean(TAG_REBORN, false);
         data.putInt(TAG_PAGES, 0);
         data.putBoolean(TAG_STASIS_BACK, false);
-        data.putString(TAG_REMOVED, "");
         LAST_TIME.remove(player.getUUID());
         BlockCloverBridge.syncToClient(player);
         broadcastState(player);
@@ -305,15 +338,20 @@ public class RebirthHandler {
         Msg.bar(player, TextFormatting.AQUA, "rebirth_unlocked");
     }
 
-    /** Bloqueia as habilidades e guarda em que slot da combat bar cada uma estava. */
-    private static void lock(ServerPlayerEntity player, boolean keepStasis) {
+    /**
+     * Vers\u00f5es anteriores do addon tiravam o Chrono Stasis e o Grigora do jogador renascido; isso confundia a combat
+     * bar do Block Clover. Agora elas ficam com ele (s\u00f3 n\u00e3o funcionam, ver {@link #onAbilityUse}); quem ainda
+     * est\u00e1 sem elas por causa da vers\u00e3o antiga recebe de volta, no slot onde estavam.
+     */
+    private static void giveBackRemoved(ServerPlayerEntity player) {
         CompoundNBT data = player.getPersistentData();
-        Map<String, Integer> slots = parseSlots(data.getString(TAG_SLOTS));
-        int before = slots.size();
-        List<String> removed = BlockCloverBridge.lockStasisAbilities(player, keepStasis, slots);
-        addRemoved(data, removed);
-        if (slots.size() != before) data.putString(TAG_SLOTS, formatSlots(slots));
-        if (!removed.isEmpty() || slots.size() != before) BlockCloverBridge.syncToClient(player);
+        String stored = data.getString(TAG_REMOVED);
+        if (stored.isEmpty() && data.getString(TAG_SLOTS).isEmpty()) return;
+        List<String> keys = stored.isEmpty() ? new ArrayList<String>() : Arrays.asList(stored.split(","));
+        BlockCloverBridge.restoreAbilities(player, keys, parseSlots(data.getString(TAG_SLOTS)));
+        data.putString(TAG_REMOVED, "");
+        data.putString(TAG_SLOTS, "");
+        BlockCloverBridge.syncToClient(player);
     }
 
     /** "stasis:3,grigora:5" para um mapa (entradas inv\u00e1lidas s\u00e3o ignoradas). */
@@ -338,15 +376,6 @@ public class RebirthHandler {
             b.append(e.getKey()).append(':').append(e.getValue());
         }
         return b.toString();
-    }
-
-    private static void addRemoved(CompoundNBT data, List<String> newlyRemoved) {
-        if (newlyRemoved.isEmpty()) return;
-        List<String> all = new ArrayList<>();
-        String stored = data.getString(TAG_REMOVED);
-        if (!stored.isEmpty()) all.addAll(Arrays.asList(stored.split(",")));
-        for (String k : newlyRemoved) if (!all.contains(k)) all.add(k);
-        data.putString(TAG_REMOVED, String.join(",", all));
     }
 
     /** Avisa o pr\u00f3prio jogador e quem o v\u00ea sobre o estado atual (grim\u00f3rio de uma p\u00e1gina ou normal). */

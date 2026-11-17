@@ -39,7 +39,7 @@
   "msg.chrono_bubble.sustain_no_targets": "No targets held.",
   "msg.chrono_bubble.sustain_no_mana": "Out of mana: time flows again.",
   "msg.chrono_bubble.rebirth": "The Swallowtail spent %s Time to bring you back. Your grimoire was reduced to a single page: steal Time up to %s to restore it.",
-  "msg.chrono_bubble.rebirth_unlocked": "Your grimoire has been restored. Equip your time powers again.",
+  "msg.chrono_bubble.rebirth_unlocked": "Your grimoire has been restored: all your time powers work again.",
   "msg.chrono_bubble.swallow_not_time_user": "The Swallowtail only answers to Time magic users.",
   "msg.chrono_bubble.swallow_reborn_locked": "With a one-page grimoire, Time only comes back by stealing.",
   "msg.chrono_bubble.swallow_empty": "The Swallowtail is empty.",
@@ -389,7 +389,9 @@
   "config.chrono_bubble.rebirth.pages_64_time": "Time for 64 pages",
   "config.chrono_bubble.rebirth.pages_64_time.tooltip": "With this much Time the grimoire goes to 64 pages (the full one has 72)",
   "msg.chrono_bubble.rebirth_pages": "Your grimoire got pages back: now it has %s. Full grimoire at %s Time.",
-  "msg.chrono_bubble.rebirth_stasis_back": "Chrono Stasis is back in the slot it was in, but it does not kill at its end yet. Grigora returns with the full grimoire, at %s Time.",
+  "msg.chrono_bubble.rebirth_stasis_back": "Chrono Stasis works again, but it does not kill at its end yet. Grigora returns with the full grimoire, at %s Time.",
   "config.chrono_bubble.rebirth.stasis_time": "Time for Chrono Stasis to return",
-  "config.chrono_bubble.rebirth.stasis_time.tooltip": "With this much Time the normal Chrono Stasis comes back (to the combat bar slot it was in), but the time advanced at its end does not kill until the grimoire is complete. Grigora only returns with the full grimoire"
+  "config.chrono_bubble.rebirth.stasis_time.tooltip": "With this much Time the normal Chrono Stasis works again, but the time advanced at its end does not kill until the grimoire is complete. Grigora only works with the full grimoire",
+  "msg.chrono_bubble.not_strong_stasis": "You are not strong enough: Chrono Stasis works again at %s Time.",
+  "msg.chrono_bubble.not_strong_grigora": "You are not strong enough: Grigora works again with the full grimoire (%s Time)."
 }

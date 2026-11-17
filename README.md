@@ -41,25 +41,25 @@ Todas as teclas podem ser trocadas em Opções → Controles → Chrono Bubble.
 - Só renasce quem usa magia de Tempo **e** morre carregando uma Swallowtail com Time guardado.
   Sem Time na Swallowtail, a morte é uma morte comum.
 - Ao renascer, **tudo zera**: o Time do jogador e o Time de todas as Swallowtails que ele carregava.
-- Renascido, o jogador fica com o grimório de uma página: Chrono Stasis e Chrono Stasis Grigora ficam bloqueados,
-  não há regeneração passiva de Time e não dá para sacar Time da Swallowtail. O Time só volta roubando.
+- Renascido, o jogador fica com o grimório de uma página: Chrono Stasis e Chrono Stasis Grigora continuam na combat
+  bar, mas não funcionam (aparece "Você não está forte o suficiente"), não há regeneração passiva de Time e não dá para sacar Time da Swallowtail. O Time só volta roubando.
 - O grimório volta aos poucos conforme o Time sobe (as páginas nunca diminuem, mesmo gastando Time):
 
   | Time | Grimório |
   |---|---|
   | menos de 250 | 1 página |
-  | 250 a 499 | 4 páginas, e o Chrono Stasis normal volta (sem matar no fim, veja abaixo) |
+  | 250 a 499 | 4 páginas, e o Chrono Stasis normal volta a funcionar (sem matar no fim, veja abaixo) |
   | 500 a 749 | 16 páginas |
   | 750 a 999 | 64 páginas |
-  | 1000 ou mais | completo (72 páginas), e os poderes voltam |
+  | 1000 ou mais | completo (72 páginas), e todos os poderes voltam a funcionar |
 
   Os limites ficam em `rebirth.pages_4_time`, `pages_16_time`, `pages_64_time` e `complete_time`.
 - **Chrono Stasis antes do grimório completo.** A partir de 250 de Time (`rebirth.stasis_time`), o Chrono Stasis
-  normal volta. Enquanto o grimório não estiver completo, o tempo avançado no fim do
+  normal volta a funcionar. Enquanto o grimório não estiver completo, o tempo avançado no fim do
   congelamento **não mata**: o alvo leva o dano que o seu Time paga, mas fica com pelo menos 1 de vida. O Chrono
-  Stasis Grigora só volta com o grimório completo.
-- As habilidades bloqueadas voltam para o mesmo slot da combat bar em que estavam. Se esse slot tiver sido ocupado
-  por outra habilidade nesse meio-tempo, é só equipá-las de novo pelo menu.
+  Stasis Grigora só funciona com o grimório completo.
+- O addon não tira nem devolve habilidades (mexer nisso bagunçava a combat bar do Block Clover): elas ficam onde estão
+  e só deixam de funcionar. Quem perdeu o Chrono Stasis ou o Grigora numa versão anterior recebe de volta ao entrar.
 - **O Time Steal do Block Clover só rende Time abaixo de 1000.** Com 1000 ou mais, o soco ainda acerta, mas não dá Time
   (é uma regra do próprio Block Clover). Isso não impede de completar o grimório: com 999 o soco ainda conta e passa
   de 1000. Para acumular mais que 1000, use os roubos do addon, que não têm esse limite: o Time Steal arremessável
