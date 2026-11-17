@@ -51,13 +51,15 @@ Todas as teclas podem ser trocadas em Opções → Controles → Chrono Bubble.
   | 250 a 499 | 4 páginas, e o Chrono Stasis normal volta (sem matar no fim, veja abaixo) |
   | 500 a 749 | 16 páginas |
   | 750 a 999 | 64 páginas |
-  | 1000 ou mais | completo (72 páginas), e os poderes voltam (é preciso equipá-los de novo) |
+  | 1000 ou mais | completo (72 páginas), e os poderes voltam |
 
   Os limites ficam em `rebirth.pages_4_time`, `pages_16_time`, `pages_64_time` e `complete_time`.
 - **Chrono Stasis antes do grimório completo.** A partir de 250 de Time (`rebirth.stasis_time`), o Chrono Stasis
-  normal volta (é preciso equipá-lo de novo). Enquanto o grimório não estiver completo, o tempo avançado no fim do
+  normal volta. Enquanto o grimório não estiver completo, o tempo avançado no fim do
   congelamento **não mata**: o alvo leva o dano que o seu Time paga, mas fica com pelo menos 1 de vida. O Chrono
   Stasis Grigora só volta com o grimório completo.
+- As habilidades bloqueadas voltam para o mesmo slot da combat bar em que estavam. Se esse slot tiver sido ocupado
+  por outra habilidade nesse meio-tempo, é só equipá-las de novo pelo menu.
 - **O Time Steal do Block Clover só rende Time abaixo de 1000.** Com 1000 ou mais, o soco ainda acerta, mas não dá Time
   (é uma regra do próprio Block Clover). Isso não impede de completar o grimório: com 999 o soco ainda conta e passa
   de 1000. Para acumular mais que 1000, use os roubos do addon, que não têm esse limite: o Time Steal arremessável
