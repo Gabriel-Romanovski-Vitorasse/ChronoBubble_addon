@@ -39,7 +39,7 @@
   "msg.chrono_bubble.sustain_no_targets": "Nenhum alvo preso.",
   "msg.chrono_bubble.sustain_no_mana": "Sem mana: o tempo voltou a correr.",
   "msg.chrono_bubble.rebirth": "A Swallowtail gastou %s de Time para te trazer de volta. Seu grimório foi reduzido a uma página: roube Time até %s para restaurá-lo.",
-  "msg.chrono_bubble.rebirth_unlocked": "Seu grimório foi restaurado. Equipe novamente seus poderes de tempo.",
+  "msg.chrono_bubble.rebirth_unlocked": "Seu grimório foi restaurado: todos os seus poderes de tempo voltaram a funcionar.",
   "msg.chrono_bubble.swallow_not_time_user": "A Swallowtail só responde a quem usa magia de Tempo.",
   "msg.chrono_bubble.swallow_reborn_locked": "Com o grimório de uma página, o Time só volta roubando.",
   "msg.chrono_bubble.swallow_empty": "A Swallowtail está vazia.",
@@ -389,7 +389,9 @@
   "config.chrono_bubble.rebirth.pages_64_time": "Time para 64 páginas",
   "config.chrono_bubble.rebirth.pages_64_time.tooltip": "Com esse Time o grimório passa para 64 páginas (o completo tem 72)",
   "msg.chrono_bubble.rebirth_pages": "Seu grimório recuperou páginas: agora são %s. Grimório completo com %s de Time.",
-  "msg.chrono_bubble.rebirth_stasis_back": "O Chrono Stasis voltou para o slot onde estava, mas ainda não mata no fim. O Grigora volta com o grimório completo, com %s de Time.",
+  "msg.chrono_bubble.rebirth_stasis_back": "O Chrono Stasis voltou a funcionar, mas ainda não mata no fim. O Grigora volta com o grimório completo, com %s de Time.",
   "config.chrono_bubble.rebirth.stasis_time": "Time para o Chrono Stasis voltar",
-  "config.chrono_bubble.rebirth.stasis_time.tooltip": "Com esse Time o Chrono Stasis normal volta (para o slot da combat bar onde estava), mas o tempo avançado no fim dele não mata até o grimório ficar completo. O Grigora só volta com o grimório completo"
+  "config.chrono_bubble.rebirth.stasis_time.tooltip": "Com esse Time o Chrono Stasis normal volta a funcionar, mas o tempo avançado no fim dele não mata até o grimório ficar completo. O Grigora só funciona com o grimório completo",
+  "msg.chrono_bubble.not_strong_stasis": "Você não está forte o suficiente: o Chrono Stasis volta a funcionar com %s de Time.",
+  "msg.chrono_bubble.not_strong_grigora": "Você não está forte o suficiente: o Grigora volta a funcionar com o grimório completo (%s de Time)."
 }

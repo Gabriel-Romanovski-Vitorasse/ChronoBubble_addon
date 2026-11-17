@@ -93,6 +93,10 @@ public abstract class ManaDrainAbility {
             Msg.bar(player, TextFormatting.RED, missingPowerKey());
             return;
         }
+        if (!RebirthHandler.canUse(player, BlockCloverBridge.KEY_STASIS)) {
+            Msg.bar(player, TextFormatting.RED, "not_strong_stasis", ChronoConfig.REBIRTH_STASIS_TIME.get());
+            return;
+        }
         if (!BlockCloverBridge.isInCombat(player)) {
             Msg.bar(player, TextFormatting.RED, "need_combat");
             return;
@@ -139,7 +143,10 @@ public abstract class ManaDrainAbility {
 
         if (!player.isAlive()) { forget(player); return; }
         if (!BlockCloverBridge.isInCombat(player)) { stop(player, TextFormatting.GRAY, msg + "_combat_off"); return; }
-        if (!BlockCloverBridge.hasChronoStasis(player)) { stop(player, null, null); return; }   // ex.: renascido
+        if (!BlockCloverBridge.hasChronoStasis(player) || !RebirthHandler.canUse(player, BlockCloverBridge.KEY_STASIS)) {
+            stop(player, null, null);                                           // ex.: renascido
+            return;
+        }
 
         ticks++;
         active.put(player.getUUID(), ticks);
