@@ -25,7 +25,52 @@ public final class ChronoCommand {
                         .executes(ctx -> status(ctx.getSource(), ctx.getSource().getPlayerOrException()))
                         .then(Commands.argument("player", EntityArgument.player())
                                 .requires(src -> src.hasPermission(2))
-                                .executes(ctx -> status(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"))))));
+                                .executes(ctx -> status(ctx.getSource(), EntityArgument.getPlayer(ctx, "player")))))
+                .then(Commands.literal("npc").requires(src -> src.hasPermission(2))
+                        .executes(ctx -> spawnMage(ctx.getSource(), null, 30, false))
+                        .then(Commands.literal("remove").executes(ctx -> removeMages(ctx.getSource())))
+                        .then(Commands.argument("time", com.mojang.brigadier.arguments.IntegerArgumentType.integer(0, 100000))
+                                .executes(ctx -> spawnMage(ctx.getSource(), null,
+                                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "time"), false))
+                                .then(Commands.argument("lethal", com.mojang.brigadier.arguments.BoolArgumentType.bool())
+                                        .executes(ctx -> spawnMage(ctx.getSource(), null,
+                                                com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "time"),
+                                                com.mojang.brigadier.arguments.BoolArgumentType.getBool(ctx, "lethal")))
+                                        .then(Commands.argument("name", com.mojang.brigadier.arguments.StringArgumentType.greedyString())
+                                                .executes(ctx -> spawnMage(ctx.getSource(),
+                                                        com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "name"),
+                                                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "time"),
+                                                        com.mojang.brigadier.arguments.BoolArgumentType.getBool(ctx, "lethal"))))))));
+    }
+
+    /**
+     * {@code /chronobubble npc [time] [lethal] [nome]}: cria o Mago do Tempo de teste onde o jogador est\u00e1 olhando
+     * (2 blocos \u00e0 frente). {@code time} \u00e9 o Time de mentira dele para o tempo avan\u00e7ado (padr\u00e3o 30);
+     * {@code lethal} deixa o tempo avan\u00e7ado matar.
+     */
+    private static int spawnMage(CommandSource src, String name, int time, boolean lethal) throws CommandSyntaxException {
+        ServerPlayerEntity p = src.getPlayerOrException();
+        TimeMageEntity mage = ChronoBubbleMod.TIME_MAGE.get().create(p.level);
+        if (mage == null) return 0;
+        net.minecraft.util.math.vector.Vector3d look = p.getViewVector(1.0F);
+        mage.moveTo(p.getX() + look.x * 2.0D, p.getY(), p.getZ() + look.z * 2.0D, p.yRot + 180.0F, 0.0F);
+        mage.configure(time, lethal);
+        mage.setCustomName(name == null ? new net.minecraft.util.text.TranslationTextComponent("entity.chrono_bubble.time_mage")
+                : new StringTextComponent(name));
+        mage.setCustomNameVisible(true);
+        p.level.addFreshEntity(mage);
+        src.sendSuccess(Msg.tr(TextFormatting.AQUA, "mage_spawned", time, lethal ? Msg.tr(TextFormatting.RED, "mage_lethal")
+                : Msg.tr(TextFormatting.GREEN, "mage_safe")), false);
+        return 1;
+    }
+
+    /** {@code /chronobubble npc remove}: tira os Magos do Tempo num raio de 64 blocos. */
+    private static int removeMages(CommandSource src) throws CommandSyntaxException {
+        ServerPlayerEntity p = src.getPlayerOrException();
+        java.util.List<TimeMageEntity> list = p.level.getEntitiesOfClass(TimeMageEntity.class, p.getBoundingBox().inflate(64.0D));
+        for (TimeMageEntity m : list) m.remove();
+        src.sendSuccess(Msg.tr(TextFormatting.YELLOW, "mage_removed", list.size()), false);
+        return list.size();
     }
 
     private static int status(CommandSource src, ServerPlayerEntity p) throws CommandSyntaxException {

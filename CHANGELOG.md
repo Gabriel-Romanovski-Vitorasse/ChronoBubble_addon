@@ -2,6 +2,10 @@
 
 ## 1.2.0 (não lançado)
 
+- **Mago do Tempo (NPC de teste)**: `/chronobubble npc [time] [lethal] [nome]` cria um NPC que lança em você, em
+  roda, Chrono Stasis direto, a esfera de Chrono Stasis e o apodrecimento; o tempo avançado age no fim dos
+  congelamentos, com um Time de mentira (padrão 30) e só mata se `lethal`. Skin opcional em
+  `config/chrono_bubble/time_mage.png`. `/chronobubble npc remove` tira os magos por perto.
 - **Renascido não perde mais habilidades: elas só não funcionam.** Tirar e devolver o Chrono Stasis e o Grigora
   bagunçava a combat bar do Block Clover. Agora elas ficam no lugar e o uso é cancelado com a mensagem "Você não está
   forte o suficiente" (o Chrono Stasis volta a funcionar com 250 de Time, o Grigora com o grimório completo). Quem

@@ -34,15 +34,18 @@ public class TimeRot {
     private static final class Rot {
         final LivingEntity target;
         final UUID attacker;
+        /** Quem apodrece o alvo quando n\u00e3o \u00e9 um jogador (o Mago do Tempo de teste); null para jogadores. */
+        final LivingEntity source;
         float damageLeft;
         int timeLeft;
         int pulsesLeft;
         long nextPulse;
         int gained;
 
-        Rot(LivingEntity target, UUID attacker, float damage, int time, int pulses, long firstPulse) {
+        Rot(LivingEntity target, UUID attacker, LivingEntity source, float damage, int time, int pulses, long firstPulse) {
             this.target = target;
             this.attacker = attacker;
+            this.source = source;
             this.damageLeft = damage;
             this.timeLeft = time;
             this.pulsesLeft = pulses;
@@ -122,10 +125,19 @@ public class TimeRot {
      * @param ticks  duração
      */
     public static void start(LivingEntity target, ServerPlayerEntity attacker, float damage, int time, int ticks) {
+        begin(target, attacker.getUUID(), null, damage, time, ticks);
+    }
+
+    /** Apodrecimento lan\u00e7ado por algo que n\u00e3o \u00e9 jogador (o Mago do Tempo de teste): ningu\u00e9m ganha Time. */
+    public static void startBy(LivingEntity target, LivingEntity source, float damage, int ticks) {
+        begin(target, source.getUUID(), source, damage, 0, ticks);
+    }
+
+    private static void begin(LivingEntity target, UUID attacker, LivingEntity source, float damage, int time, int ticks) {
         if (target.level.isClientSide || !target.isAlive()) return;
         long now = target.level.getGameTime();
         int pulses = pulsesFor(ticks);
-        ROTS.add(new Rot(target, attacker.getUUID(), Math.max(0.0F, damage), Math.max(0, time), pulses, now + PULSE_TICKS));
+        ROTS.add(new Rot(target, attacker, source, Math.max(0.0F, damage), Math.max(0, time), pulses, now + PULSE_TICKS));
         // tom apodrecido no modelo, para quem v\u00ea o alvo (e para ele mesmo, se for jogador)
         ChronoBubbleMod.CHANNEL.send(net.minecraftforge.fml.network.PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> target),
                 new RotPacket(target.getId(), pulses * PULSE_TICKS));
@@ -140,10 +152,11 @@ public class TimeRot {
         for (Iterator<Rot> it = ROTS.iterator(); it.hasNext(); ) {
             Rot r = it.next();
             LivingEntity target = r.target;
-            ServerPlayerEntity attacker = target.getServer() == null ? null
+            ServerPlayerEntity player = r.source != null || target.getServer() == null ? null
                     : target.getServer().getPlayerList().getPlayer(r.attacker);
+            LivingEntity attacker = r.source != null ? (r.source.isAlive() ? r.source : null) : player;
             if (!target.isAlive() || attacker == null) {                        // morreu ou quem bateu saiu: acabou
-                finish(r, attacker);
+                finish(r, player);
                 it.remove();
                 continue;
             }
@@ -162,17 +175,17 @@ public class TimeRot {
             r.nextPulse += PULSE_TICKS;
 
             if (dmg > 0.0F) SustainedStasis.hurtDirect(target, rotDamage(attacker), dmg);
-            if (time > 0) {
-                BlockCloverBridge.spend(attacker, 0.0F, -time, 0);              // tempo negativo = ganha Time
-                BlockCloverBridge.syncToClient(attacker);
-                RebirthHandler.acceptTime(attacker);
+            if (time > 0 && player != null) {
+                BlockCloverBridge.spend(player, 0.0F, -time, 0);                // tempo negativo = ganha Time
+                BlockCloverBridge.syncToClient(player);
+                RebirthHandler.acceptTime(player);
                 r.gained += time;
             }
             rotParticles(target, 12);
             target.level.playSound(null, target.getX(), target.getY(), target.getZ(), ChronoBubbleMod.STASIS_END.get(),
                     SoundCategory.PLAYERS, 0.35F, 0.35F + 0.1F * r.pulsesLeft);
             if (r.pulsesLeft <= 0) {
-                finish(r, attacker);
+                finish(r, player);
                 it.remove();
             }
         }
@@ -192,7 +205,7 @@ public class TimeRot {
     }
 
     /** Dano do apodrecimento (a armadura vale, como no soco). */
-    private static EntityDamageSource rotDamage(ServerPlayerEntity attacker) {
+    private static EntityDamageSource rotDamage(LivingEntity attacker) {
         return new EntityDamageSource("chrono_rot", attacker);
     }
 

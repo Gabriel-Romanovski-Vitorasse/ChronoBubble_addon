@@ -57,6 +57,8 @@ public class TimeAging {
 
     /** Alvo (uuid) -> quem congelou (uuid). */
     private static final Map<UUID, UUID> MARKED = new HashMap<>();
+    /** Alvos congelados pelo Mago do Tempo de teste: o tempo deles avan\u00e7a com o Time de mentira do NPC. */
+    private static final Map<UUID, TimeMageEntity> MAGE_MARKED = new HashMap<>();
     /** Jogador -> quando armou o soco do Chrono Stasis. */
     private static final Map<UUID, Long> PUNCH_ARMED = new HashMap<>();
 
@@ -90,6 +92,12 @@ public class TimeAging {
         if (!ChronoConfig.AGING_ENABLED.get() || !ChronoConfig.AGING_FROM_ORB.get() || caster == null) return;
         MARKED.put(target.getUUID(), caster.getUUID());
         LOG.info("[ChronoBubble/Tempo] esfera marcou {} (por {})", target.getName().getString(), caster.getName().getString());
+    }
+
+    /** O Mago do Tempo de teste congelou {@code target} (direto ou com a esfera). */
+    public static void markByMage(LivingEntity target, TimeMageEntity mage) {
+        if (!ChronoConfig.AGING_ENABLED.get()) return;
+        MAGE_MARKED.put(target.getUUID(), mage);
     }
 
     /**
@@ -180,13 +188,17 @@ public class TimeAging {
         LivingEntity target = event.getEntityLiving();
         if (inst == null || target.level.isClientSide || !BlockCloverBridge.isStasis(inst.getEffect())) return;
         UUID caster = MARKED.remove(target.getUUID());
-        LOG.info("[ChronoBubble/Tempo] Chrono Stasis acabou sozinho em {} (marcado: {})", target.getName().getString(), caster != null);
+        TimeMageEntity mage = MAGE_MARKED.remove(target.getUUID());
+        LOG.info("[ChronoBubble/Tempo] Chrono Stasis acabou sozinho em {} (marcado: {})", target.getName().getString(),
+                caster != null || mage != null);
         if (caster != null) advance(target, caster);
+        else if (mage != null) advanceByMage(target, mage);
     }
 
     /** Efeito tirado antes do fim (leite, sustentado, Time Hop...): sem tempo avançado. */
     @SubscribeEvent
     public static void onRemoved(PotionEvent.PotionRemoveEvent event) {
+        if (BlockCloverBridge.isStasis(event.getPotion())) MAGE_MARKED.remove(event.getEntityLiving().getUUID());
         if (BlockCloverBridge.isStasis(event.getPotion()) && MARKED.remove(event.getEntityLiving().getUUID()) != null) {
             LOG.info("[ChronoBubble/Tempo] Chrono Stasis tirado antes do fim de {}: sem tempo avan\u00e7ado", event.getEntityLiving().getName().getString());
         }
@@ -201,6 +213,7 @@ public class TimeAging {
     @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
         MARKED.remove(event.getEntityLiving().getUUID());
+        MAGE_MARKED.remove(event.getEntityLiving().getUUID());
         PUNCH_ARMED.remove(event.getEntityLiving().getUUID());
         LAST_HIT.remove(event.getEntityLiving().getUUID());
     }
@@ -208,6 +221,7 @@ public class TimeAging {
     @SubscribeEvent
     public static void onServerStopping(FMLServerStoppingEvent event) {
         MARKED.clear();
+        MAGE_MARKED.clear();
         PUNCH_ARMED.clear();
         PENDING.clear();
         LAST_HIT.clear();
@@ -242,19 +256,45 @@ public class TimeAging {
         BlockCloverBridge.spend(caster, 0.0F, r.timeCost, 0);
         BlockCloverBridge.syncToClient(caster);
         SustainedStasis.hurtDirect(target, agingDamage(caster), r.kill ? health + 1.0F : r.damage);
-
-        double y = target.getY() + target.getBbHeight() * 0.5D;
-        world.sendParticles(r.kill ? ParticleTypes.WHITE_ASH : ParticleTypes.ASH, target.getX(), y, target.getZ(),
-                r.kill ? 60 : 25, target.getBbWidth() * 0.5D, target.getBbHeight() * 0.4D, target.getBbWidth() * 0.5D, 0.02D);
-        world.sendParticles(ParticleTypes.REVERSE_PORTAL, target.getX(), y, target.getZ(), 20, 0.3D, 0.4D, 0.3D, 0.05D);
-        world.playSound(null, target.getX(), target.getY(), target.getZ(), ChronoBubbleMod.STASIS_END.get(),
-                SoundCategory.PLAYERS, 1.0F, r.kill ? 0.5F : 0.7F);
+        agingEffects(world, target, r.kill);
         if (r.kill) Msg.bar(caster, TextFormatting.AQUA, "aging_kill", target.getDisplayName(), r.timeCost);
         else Msg.bar(caster, TextFormatting.AQUA, "aging_damage", target.getDisplayName(), Msg.f1(r.damage), r.timeCost);
     }
 
+    /**
+     * Tempo avan\u00e7ado causado pelo Mago do Tempo de teste: usa o Time de mentira dele (sem cobrar nada) e s\u00f3 mata
+     * se ele foi criado como letal.
+     */
+    static void advanceByMage(LivingEntity target, TimeMageEntity mage) {
+        if (!ChronoConfig.AGING_ENABLED.get() || !target.isAlive() || !(target.level instanceof ServerWorld)) return;
+        if (target instanceof PlayerEntity && !ChronoConfig.AGING_PLAYERS.get()) return;
+        if (!mage.isAlive()) return;
+        ServerWorld world = (ServerWorld) target.level;
+        float health = target.getHealth() + target.getAbsorptionAmount();
+        AgingRule.Result r = AgingRule.resolve(health, target.getMaxHealth(), mage.virtualTime(),
+                ChronoConfig.f(ChronoConfig.AGING_TIME_PER_HP), isBoss(target), ChronoConfig.f(ChronoConfig.AGING_BOSS_FRACTION),
+                mage.isLethal());
+        LOG.info("[ChronoBubble/Tempo] Mago do Tempo: tempo avan\u00e7ado em {}: vida {}, Time {}, resultado {}",
+                target.getName().getString(), health, mage.virtualTime(), r);
+        if (r.timeCost <= 0) return;
+        SustainedStasis.hurtDirect(target, agingDamage(mage), r.kill ? health + 1.0F : r.damage);
+        agingEffects(world, target, r.kill);
+        if (target instanceof PlayerEntity) {
+            Msg.bar((PlayerEntity) target, TextFormatting.GOLD, "mage_aged", Msg.f1(r.kill ? health : r.damage));
+        }
+    }
+
+    private static void agingEffects(ServerWorld world, LivingEntity target, boolean kill) {
+        double y = target.getY() + target.getBbHeight() * 0.5D;
+        world.sendParticles(kill ? ParticleTypes.WHITE_ASH : ParticleTypes.ASH, target.getX(), y, target.getZ(),
+                kill ? 60 : 25, target.getBbWidth() * 0.5D, target.getBbHeight() * 0.4D, target.getBbWidth() * 0.5D, 0.02D);
+        world.sendParticles(ParticleTypes.REVERSE_PORTAL, target.getX(), y, target.getZ(), 20, 0.3D, 0.4D, 0.3D, 0.05D);
+        world.playSound(null, target.getX(), target.getY(), target.getZ(), ChronoBubbleMod.STASIS_END.get(),
+                SoundCategory.PLAYERS, 1.0F, kill ? 0.5F : 0.7F);
+    }
+
     /** Dano do tempo avançado: ignora armadura e proteções mágicas (o corpo simplesmente envelhece). */
-    private static EntityDamageSource agingDamage(PlayerEntity caster) {
+    private static EntityDamageSource agingDamage(LivingEntity caster) {
         return new EntityDamageSource("chrono_aging", caster) {
             {
                 bypassArmor();

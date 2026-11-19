@@ -393,5 +393,15 @@
   "config.chrono_bubble.rebirth.stasis_time": "Time para o Chrono Stasis voltar",
   "config.chrono_bubble.rebirth.stasis_time.tooltip": "Com esse Time o Chrono Stasis normal volta a funcionar, mas o tempo avançado no fim dele não mata até o grimório ficar completo. O Grigora só funciona com o grimório completo",
   "msg.chrono_bubble.not_strong_stasis": "Você não está forte o suficiente: o Chrono Stasis volta a funcionar com %s de Time.",
-  "msg.chrono_bubble.not_strong_grigora": "Você não está forte o suficiente: o Grigora volta a funcionar com o grimório completo (%s de Time)."
+  "msg.chrono_bubble.not_strong_grigora": "Você não está forte o suficiente: o Grigora volta a funcionar com o grimório completo (%s de Time).",
+  "entity.chrono_bubble.time_mage": "Mago do Tempo",
+  "msg.chrono_bubble.mage_cast_freeze": "%s usou Chrono Stasis em você!",
+  "msg.chrono_bubble.mage_cast_orb": "%s arremessou uma esfera de Chrono Stasis!",
+  "msg.chrono_bubble.mage_cast_rot": "%s apodreceu o seu tempo!",
+  "msg.chrono_bubble.mage_aged": "O seu tempo avançou: %s de dano.",
+  "msg.chrono_bubble.mage_no_block_clover": "O Mago do Tempo precisa do Block Clover para congelar.",
+  "msg.chrono_bubble.mage_spawned": "Mago do Tempo criado (Time de mentira: %s, tempo avançado %s). Ele lança: congelar, esfera e apodrecimento, a cada 6 s.",
+  "msg.chrono_bubble.mage_lethal": "pode matar",
+  "msg.chrono_bubble.mage_safe": "não mata",
+  "msg.chrono_bubble.mage_removed": "%s Mago(s) do Tempo removido(s)."
 }

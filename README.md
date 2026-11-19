@@ -120,6 +120,26 @@ D C D      V = Trepadeira
 M V M      D = Diamante, C = Relógio
 ```
 
+### Mago do Tempo (NPC de teste)
+
+Para ver as magias de tempo do lado de quem recebe, um operador pode criar um **Mago do Tempo**:
+
+```
+/chronobubble npc [time] [lethal] [nome]
+```
+
+- Ele aparece 2 blocos à sua frente, fica parado olhando para o jogador mais perto e, a cada 6 segundos, lança a
+  próxima magia da roda: **Chrono Stasis direto**, **esfera de Chrono Stasis** e **apodrecimento** (o golpe do
+  Alt + Time Steal). Quando um congelamento acaba sozinho, o **tempo avançado** age em você.
+- `time` é o Time de mentira dele, usado só pelo tempo avançado (padrão 30 = 10 de dano com 3 de Time por ponto de
+  vida). Nada é cobrado de ninguém.
+- `lethal` (`true`/`false`, padrão `false`) deixa o tempo avançado matar.
+- `nome` aparece sobre a cabeça dele. Exemplo: `/chronobubble npc 60 false Julius Novachrono`.
+- `/chronobubble npc remove` tira os magos num raio de 64 blocos.
+- **Skin:** por padrão ele usa a skin padrão do Minecraft. Para usar outra, coloque um arquivo de skin de jogador
+  (PNG 64x64) em `config/chrono_bubble/time_mage.png` e reabra o jogo. O addon não traz skin de personagem nenhum.
+- O congelamento direto precisa do Block Clover (o efeito Chrono Stasis é dele).
+
 ## Trocar os sons
 
 Os sons ficam em `src/main/resources/assets/chrono_bubble/sounds/` e são ligados aos eventos em `sounds.json`:

@@ -18,5 +18,6 @@ public class ClientSetup {
                 new net.minecraft.util.ResourceLocation(ChronoBubbleMod.MODID, "charge"),
                 (stack, world, entity) -> Math.min(1.0F, SwallowtailItem.getStored(stack) / (float) Math.max(1, ChronoConfig.SWALLOW_CAPACITY.get()))));
         RenderingRegistry.registerEntityRenderingHandler(ChronoBubbleMod.STASIS_ORB.get(), StasisOrbRenderer::new);
+        RenderingRegistry.registerEntityRenderingHandler(ChronoBubbleMod.TIME_MAGE.get(), TimeMageRenderer::new);
     }
 }
