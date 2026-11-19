@@ -9,9 +9,6 @@ import net.minecraft.entity.ai.goal.LookAtGoal;
 import net.minecraft.entity.ai.goal.LookRandomlyGoal;
 import net.minecraft.entity.ai.goal.SwimGoal;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.EquipmentSlotType;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.potion.Effect;
@@ -45,8 +42,7 @@ public class TimeMageEntity extends CreatureEntity {
 
     public TimeMageEntity(EntityType<? extends TimeMageEntity> type, World world) {
         super(type, world);
-        setPersistenceRequired();
-        setItemSlot(EquipmentSlotType.MAINHAND, new ItemStack(Items.BOOK));
+        setPersistenceRequired();                                   // o grim\u00f3rio flutua ao lado dele (TimeGrimoireRenderer)
     }
 
     public static AttributeModifierMap.MutableAttribute attributes() {
