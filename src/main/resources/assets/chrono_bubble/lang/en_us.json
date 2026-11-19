@@ -393,5 +393,15 @@
   "config.chrono_bubble.rebirth.stasis_time": "Time for Chrono Stasis to return",
   "config.chrono_bubble.rebirth.stasis_time.tooltip": "With this much Time the normal Chrono Stasis works again, but the time advanced at its end does not kill until the grimoire is complete. Grigora only works with the full grimoire",
   "msg.chrono_bubble.not_strong_stasis": "You are not strong enough: Chrono Stasis works again at %s Time.",
-  "msg.chrono_bubble.not_strong_grigora": "You are not strong enough: Grigora works again with the full grimoire (%s Time)."
+  "msg.chrono_bubble.not_strong_grigora": "You are not strong enough: Grigora works again with the full grimoire (%s Time).",
+  "entity.chrono_bubble.time_mage": "Time Mage",
+  "msg.chrono_bubble.mage_cast_freeze": "%s used Chrono Stasis on you!",
+  "msg.chrono_bubble.mage_cast_orb": "%s threw a Chrono Stasis orb!",
+  "msg.chrono_bubble.mage_cast_rot": "%s rotted your time!",
+  "msg.chrono_bubble.mage_aged": "Your time jumped ahead: %s damage.",
+  "msg.chrono_bubble.mage_no_block_clover": "The Time Mage needs Block Clover to freeze.",
+  "msg.chrono_bubble.mage_spawned": "Time Mage created (fake Time: %s, advanced time %s). It casts: freeze, orb and rot, every 6 s.",
+  "msg.chrono_bubble.mage_lethal": "can kill",
+  "msg.chrono_bubble.mage_safe": "does not kill",
+  "msg.chrono_bubble.mage_removed": "%s Time Mage(s) removed."
 }

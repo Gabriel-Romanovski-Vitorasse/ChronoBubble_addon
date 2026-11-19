@@ -95,6 +95,8 @@ public class StasisOrbEntity extends ThrowableEntity {
             target.addEffect(new EffectInstance(effect, (int) Math.round(ChronoConfig.THROW_FREEZE_SECONDS.get() * 20.0D)));
             if (target.hasEffect(effect) && getOwner() instanceof net.minecraft.entity.player.PlayerEntity) {
                 TimeAging.markOrb(target, (net.minecraft.entity.player.PlayerEntity) getOwner());   // tempo avan\u00e7a no fim
+            } else if (target.hasEffect(effect) && getOwner() instanceof TimeMageEntity) {
+                TimeAging.markByMage(target, (TimeMageEntity) getOwner());
             }
         }
     }

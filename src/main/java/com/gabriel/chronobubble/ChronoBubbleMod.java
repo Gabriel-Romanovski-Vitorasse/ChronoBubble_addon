@@ -48,6 +48,11 @@ public class ChronoBubbleMod {
             () -> EntityType.Builder.<StasisOrbEntity>of(StasisOrbEntity::new, EntityClassification.MISC)
                     .sized(0.3F, 0.3F).clientTrackingRange(4).updateInterval(10).build(MODID + ":stasis_orb"));
 
+    /** NPC de teste que usa as magias de tempo do addon em jogadores ({@code /chronobubble npc}). */
+    public static final RegistryObject<EntityType<TimeMageEntity>> TIME_MAGE = ENTITIES.register("time_mage",
+            () -> EntityType.Builder.<TimeMageEntity>of(TimeMageEntity::new, EntityClassification.CREATURE)
+                    .sized(0.6F, 1.8F).clientTrackingRange(10).build(MODID + ":time_mage"));
+
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
     public static final RegistryObject<Item> SWALLOWTAIL = ITEMS.register("swallowtail", SwallowtailItem::new);
 
@@ -58,6 +63,8 @@ public class ChronoBubbleMod {
         SOUNDS.register(FMLJavaModLoadingContext.get().getModEventBus());
         ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
         ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
+        FMLJavaModLoadingContext.get().getModEventBus().addListener((net.minecraftforge.event.entity.EntityAttributeCreationEvent e) ->
+                e.put(TIME_MAGE.get(), TimeMageEntity.attributes().build()));
         CHANNEL.registerMessage(0, StasisPacket.class, StasisPacket::encode, StasisPacket::decode, StasisPacket::handle);
         CHANNEL.registerMessage(1, RebirthPacket.class, RebirthPacket::encode, RebirthPacket::decode, RebirthPacket::handle);
         CHANNEL.registerMessage(2, TimeGainPacket.class, TimeGainPacket::encode, TimeGainPacket::decode, TimeGainPacket::handle);
