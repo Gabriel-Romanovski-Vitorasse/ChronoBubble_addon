@@ -134,6 +134,7 @@ Para ver as magias de tempo do lado de quem recebe, um operador pode criar um **
 - `time` é o Time de mentira dele, usado só pelo tempo avançado (padrão 30 = 10 de dano com 3 de Time por ponto de
   vida). Nada é cobrado de ninguém.
 - `lethal` (`true`/`false`, padrão `false`) deixa o tempo avançado matar.
+- O Grimório do Tempo flutua ao lado dele, como num jogador com o grimório de Tempo em combate.
 - `nome` aparece sobre a cabeça dele. Exemplo: `/chronobubble npc 60 false Julius Novachrono`.
 - `/chronobubble npc remove` tira os magos num raio de 64 blocos.
 - **Skin:** por padrão ele usa a skin padrão do Minecraft. Para usar outra, coloque um arquivo de skin de jogador

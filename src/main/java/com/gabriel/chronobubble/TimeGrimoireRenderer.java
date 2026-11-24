@@ -42,8 +42,10 @@ public class TimeGrimoireRenderer {
     public static void onRenderLiving(RenderLivingEvent.Post<?, ?> event) {
         if (!ChronoConfig.GRIMOIRE_ENABLED.get()) return;
         LivingEntity entity = event.getEntity();
-        if (!(entity instanceof PlayerEntity)) return;
-        if (!BlockCloverBridge.hasTimeGrimoireOut(entity)) return;
+        // jogadores com o grim\u00f3rio de Tempo em combate, e sempre o Mago do Tempo de teste
+        boolean mage = entity instanceof TimeMageEntity;
+        if (!mage && !(entity instanceof PlayerEntity)) return;
+        if (!mage && !BlockCloverBridge.hasTimeGrimoireOut(entity)) return;
 
         MatrixStack stack = event.getMatrixStack();
         IRenderTypeBuffer buffers = event.getBuffers();
