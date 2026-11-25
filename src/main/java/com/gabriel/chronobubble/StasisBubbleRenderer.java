@@ -93,20 +93,25 @@ public class StasisBubbleRenderer {
         LivingEntity entity = event.getEntity();
         Effect effect = getEffect();
         // O servidor avisa o cliente (ClientStasis); hasEffect cobre o pr\u00f3prio jogador.
-        boolean frozen = ClientStasis.isFrozen(entity) || (effect != null && entity.hasEffect(effect));
+        boolean tracked = ClientStasis.isFrozen(entity);
+        boolean frozen = tracked || (effect != null && entity.hasEffect(effect) && !ClientShatter.recentlyShattered(entity));
         if (!frozen) return;
 
         MatrixStack stack = event.getMatrixStack();
-        float time = entity.tickCount + event.getPartialRenderTick();
+        float partial = event.getPartialRenderTick();
+        float time = entity.tickCount + partial;
 
         // Raio compartilhado com a l\u00f3gica dos proj\u00e9teis (StasisField) e anima\u00e7\u00e3o de entrada/sa\u00edda
-        float radius = StasisField.radius(entity) * ClientStasis.getScale(entity, event.getPartialRenderTick());
+        float radius = StasisField.radius(entity) * ClientStasis.getScale(entity, partial);
         if (radius < 0.02F) return;
+        float entry = ClientStasis.entryProgress(entity, partial);
+        float worldNow = entity.level.getGameTime() + partial;
 
         stack.pushPose();
         stack.translate(0.0D, entity.getBbHeight() * 0.5D, 0.0D);
         float pulse = 1.0F + 0.015F * (float) Math.sin(time * 0.15F);       // leve pulsa\u00e7\u00e3o
-        drawBubble(stack, event.getBuffers(), radius * pulse, ClientStasis.flicker(entity, time), time, MOB_BAND, entity.getId());
+        drawBubble(stack, event.getBuffers(), radius * pulse, ClientStasis.flicker(entity, time), time, MOB_BAND, entity.getId(),
+                entry, ClientStasis.ripples(entity, worldNow), worldNow);
         stack.popPose();
     }
 
@@ -120,11 +125,26 @@ public class StasisBubbleRenderer {
      */
     public static void drawBubble(MatrixStack stack, IRenderTypeBuffer buffers, float radius, float fade, float time,
                                   float bandRatio, int seed) {
+        drawBubble(stack, buffers, radius, fade, time, bandRatio, seed, 1.0F, null, 0.0F);
+    }
+
+    /**
+     * Igual ao de cima, com a entrada animada e as ondas dos golpes.
+     *
+     * @param entry    0..1 da entrada (1 = acabou): clar\u00e3o, e os an\u00e9is entram maiores e girando r\u00e1pido
+     * @param ripples  ondas ativas ({dx, dy, dz, tick de in\u00edcio}) ou null
+     * @param worldNow tick do mundo agora (com a fra\u00e7\u00e3o), para a idade das ondas
+     */
+    public static void drawBubble(MatrixStack stack, IRenderTypeBuffer buffers, float radius, float fade, float time,
+                                  float bandRatio, int seed, float entry, java.util.List<float[]> ripples, float worldNow) {
         float toward = RING_TILT_TOWARD + TOWARD_VARIATION * signedNoise(seed, 1);
         float side = RING_TILT_SIDE + SIDE_VARIATION * signedNoise(seed, 2);
-        float spin = (signedNoise(seed, 3) < 0.0F ? -1.0F : 1.0F) * time * RING_SPEED + 360.0F * signedNoise(seed, 4);
+        float dirSign = signedNoise(seed, 3) < 0.0F ? -1.0F : 1.0F;
+        float spin = dirSign * (time * RING_SPEED + BubbleFx.entrySpin(entry)) + 360.0F * signedNoise(seed, 4);
+        float flash = BubbleFx.entryFlash(entry);
+        float ringGrow = 1.0F + 0.5F * (1.0F - BubbleFx.easeOutBack(entry));  // an\u00e9is entram de fora para o lugar
 
-        drawSphere(stack, buffers.getBuffer(SPHERE_TYPE), radius, SPHERE_ALPHA * fade);
+        drawSphere(stack, buffers.getBuffer(SPHERE_TYPE), radius, SPHERE_ALPHA * fade, flash, ripples, worldNow);
 
         // vira a faixa para quem olha (s\u00f3 em volta do eixo vertical): +Z local passa a apontar para a c\u00e2mera
         float yaw = Minecraft.getInstance().gameRenderer.getMainCamera().getYRot();
@@ -135,7 +155,7 @@ public class StasisBubbleRenderer {
         stack.mulPose(Vector3f.XP.rotationDegrees(toward));                 // lado perto de quem olha desce
         stack.mulPose(Vector3f.ZP.rotationDegrees(side));
         stack.mulPose(Vector3f.YP.rotationDegrees(spin));
-        drawRing(stack, buffers.getBuffer(RING_TYPE), radius * 1.04F, radius * bandRatio, RING_ALPHA * fade);
+        drawRing(stack, buffers.getBuffer(RING_TYPE), radius * 1.04F * ringGrow, radius * bandRatio, RING_ALPHA * fade);
         stack.popPose();
 
         if (ChronoConfig.SECOND_RING.get()) {
@@ -143,7 +163,7 @@ public class StasisBubbleRenderer {
             stack.mulPose(Vector3f.XP.rotationDegrees(-toward));
             stack.mulPose(Vector3f.ZP.rotationDegrees(side - 65.0F));
             stack.mulPose(Vector3f.YP.rotationDegrees(-spin * 0.6F));
-            drawRing(stack, buffers.getBuffer(RING_TYPE), radius * 1.08F, radius * bandRatio * 0.75F, RING_ALPHA * 0.8F * fade);
+            drawRing(stack, buffers.getBuffer(RING_TYPE), radius * 1.08F * ringGrow, radius * bandRatio * 0.75F, RING_ALPHA * 0.8F * fade);
             stack.popPose();
         }
         stack.popPose();
@@ -181,6 +201,12 @@ public class StasisBubbleRenderer {
      * transparente e clara; de lado (na borda), azul e mais opaca. Um brilho suave fixo na c\u00e2mera completa o ar de bolha.
      */
     static void drawSphere(MatrixStack stack, IVertexBuilder b, float r, float alphaF) {
+        drawSphere(stack, b, r, alphaF, 0.0F, null, 0.0F);
+    }
+
+    /** Esfera com clar\u00e3o ({@code flash} 0..1) e ondas dos golpes (cada uma deforma e acende a superf\u00edcie). */
+    static void drawSphere(MatrixStack stack, IVertexBuilder b, float r, float alphaF, float flash,
+                           java.util.List<float[]> ripples, float worldNow) {
         Matrix4f pose = stack.last().pose();
         Matrix3f normal = stack.last().normal();
 
@@ -200,18 +226,36 @@ public class StasisBubbleRenderer {
                 float u0 = (float) j / LON_SEGMENTS;
                 float u1 = (float) (j + 1) / LON_SEGMENTS;
 
-                bubbleVertex(b, pose, normal, r, x00 * c0, y0, z00 * c0, u0, v0, alphaF);
-                bubbleVertex(b, pose, normal, r, x01 * c0, y0, z01 * c0, u1, v0, alphaF);
-                bubbleVertex(b, pose, normal, r, x01 * c1, y1, z01 * c1, u1, v1, alphaF);
-                bubbleVertex(b, pose, normal, r, x00 * c1, y1, z00 * c1, u0, v1, alphaF);
+                bubbleVertex(b, pose, normal, r, x00 * c0, y0, z00 * c0, u0, v0, alphaF, flash, ripples, worldNow);
+                bubbleVertex(b, pose, normal, r, x01 * c0, y0, z01 * c0, u1, v0, alphaF, flash, ripples, worldNow);
+                bubbleVertex(b, pose, normal, r, x01 * c1, y1, z01 * c1, u1, v1, alphaF, flash, ripples, worldNow);
+                bubbleVertex(b, pose, normal, r, x00 * c1, y1, z00 * c1, u0, v1, alphaF, flash, ripples, worldNow);
             }
         }
     }
 
-    /** V\u00e9rtice da esfera de raio {@code r} na dire\u00e7\u00e3o unit\u00e1ria (nx, ny, nz), com cor e opacidade do fresnel. */
+    /** V\u00e9rtice da esfera de raio {@code r} na dire\u00e7\u00e3o unit\u00e1ria (nx, ny, nz), com o clar\u00e3o e as ondas. */
     private static void bubbleVertex(IVertexBuilder b, Matrix4f pose, Matrix3f normalMat, float r,
-                                     float nx, float ny, float nz, float u, float v, float alphaF) {
-        float rim = (float) Math.pow(1.0F - facing(pose, normalMat, r * nx, r * ny, r * nz, nx, ny, nz), RIM_POWER);
+                                     float nx, float ny, float nz, float u, float v, float alphaF,
+                                     float flash, java.util.List<float[]> ripples, float worldNow) {
+        float wave = 0.0F;
+        if (ripples != null) {
+            for (float[] rp : ripples) {
+                wave += BubbleFx.ripple(nx * rp[0] + ny * rp[1] + nz * rp[2], (worldNow - rp[3]) / BubbleFx.RIPPLE_TICKS);
+            }
+            wave = Math.min(1.5F, wave);
+        }
+        float rr = r * (1.0F + 0.08F * wave);                                // a superf\u00edcie ondula para fora
+        fresnelVertex(b, pose, normalMat, rr * nx, rr * ny, rr * nz, nx, ny, nz, u, v, alphaF, Math.max(flash, wave));
+    }
+
+    /**
+     * V\u00e9rtice com a cor e a opacidade do fresnel (borda azul, centro claro, brilho suave), em qualquer posi\u00e7\u00e3o:
+     * usado pela esfera e pelos cacos da quebra. {@code glow} 0..1 puxa para o branco e acende (clar\u00e3o, ondas).
+     */
+    static void fresnelVertex(IVertexBuilder b, Matrix4f pose, Matrix3f normalMat, float x, float y, float z,
+                              float nx, float ny, float nz, float u, float v, float alphaF, float glow) {
+        float rim = (float) Math.pow(1.0F - facing(pose, normalMat, x, y, z, nx, ny, nz), RIM_POWER);
         Vector3f n = new Vector3f(nx, ny, nz);
         n.transform(normalMat);
         n.normalize();
@@ -221,8 +265,16 @@ public class StasisBubbleRenderer {
         float green = lerp(CENTER_RGB[1], EDGE_RGB[1], rim) + spec;
         float blue = lerp(CENTER_RGB[2], EDGE_RGB[2], rim) + spec;
         float alpha = alphaF * (CENTER_ALPHA + (1.0F - CENTER_ALPHA) * rim) + spec * alphaF;
+        if (glow > 0.0F) {
+            // puxa para um branco-azulado brilhante (bem vis\u00edvel tamb\u00e9m contra o c\u00e9u claro)
+            float g = Math.min(1.0F, glow);
+            red = lerp(red, 0.80F, g);
+            green = lerp(green, 0.97F, g);
+            blue = lerp(blue, 1.00F, g);
+            alpha = Math.min(1.0F, alpha + g * 1.1F * alphaF);
+        }
 
-        b.vertex(pose, r * nx, r * ny, r * nz)
+        b.vertex(pose, x, y, z)
                 .color(byteOf(red), byteOf(green), byteOf(blue), byteOf(alpha))
                 .uv(u, v)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)

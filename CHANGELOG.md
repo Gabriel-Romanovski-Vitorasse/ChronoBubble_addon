@@ -2,6 +2,10 @@
 
 ## 1.2.0 (não lançado)
 
+- **Animações da bolha do Chrono Stasis:** entrada com clarão, crescimento que passa do ponto e anéis entrando
+  girando; ondas na superfície a cada golpe num alvo congelado, saindo do ponto atingido; e, no fim do congelamento,
+  a bolha se parte em cacos que voam e somem. Opções `visual.bubble_entry`, `bubble_ripples` e `bubble_shatter`.
+  Protocolo de rede 5.
 - **Mago do Tempo (NPC de teste)**: `/chronobubble npc [time] [lethal] [nome]` cria um NPC que lança em você, em
   roda, Chrono Stasis direto, a esfera de Chrono Stasis e o apodrecimento; o tempo avançado age no fim dos
   congelamentos, com um Time de mentira (padrão 30) e só mata se `lethal`. Skin opcional em
