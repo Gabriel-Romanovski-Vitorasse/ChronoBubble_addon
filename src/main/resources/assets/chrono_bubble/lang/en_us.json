@@ -403,5 +403,11 @@
   "msg.chrono_bubble.mage_spawned": "Time Mage created (fake Time: %s, advanced time %s). It casts: freeze, orb and rot, every 6 s.",
   "msg.chrono_bubble.mage_lethal": "can kill",
   "msg.chrono_bubble.mage_safe": "does not kill",
-  "msg.chrono_bubble.mage_removed": "%s Time Mage(s) removed."
+  "msg.chrono_bubble.mage_removed": "%s Time Mage(s) removed.",
+  "config.chrono_bubble.visual.bubble_entry": "Animated bubble entry",
+  "config.chrono_bubble.visual.bubble_entry.tooltip": "true = the bubble appears with a flash, overshoots its size and the rings spin in fast; false = it just grows",
+  "config.chrono_bubble.visual.bubble_shatter": "Bubble shatters at the end",
+  "config.chrono_bubble.visual.bubble_shatter.tooltip": "true = when the freeze ends, the bubble breaks into shards that fly off and fade; false = it just shrinks",
+  "config.chrono_bubble.visual.bubble_ripples": "Ripples on hits",
+  "config.chrono_bubble.visual.bubble_ripples.tooltip": "true = hits and projectiles on a frozen target send a ripple across the bubble from the point that was hit"
 }

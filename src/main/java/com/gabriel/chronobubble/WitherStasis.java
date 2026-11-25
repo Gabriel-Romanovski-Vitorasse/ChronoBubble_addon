@@ -53,6 +53,11 @@ public class WitherStasis {
     /** Quando cada Wither (uuid) volta a poder ser congelado. */
     private static final Map<UUID, Long> IMMUNE_UNTIL = new HashMap<>();
 
+    /** O Wither est\u00e1 parado pelo addon agora (para as ondas dos golpes na bolha dele). */
+    public static boolean isFrozen(Entity e) {
+        return e instanceof WitherEntity && FROZEN.containsKey(e.getId());
+    }
+
     public static boolean applies(Entity e) {
         return e instanceof WitherEntity && ChronoConfig.WITHER_ENABLED.get();
     }

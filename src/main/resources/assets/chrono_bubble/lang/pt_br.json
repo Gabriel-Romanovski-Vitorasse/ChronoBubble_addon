@@ -403,5 +403,11 @@
   "msg.chrono_bubble.mage_spawned": "Mago do Tempo criado (Time de mentira: %s, tempo avançado %s). Ele lança: congelar, esfera e apodrecimento, a cada 6 s.",
   "msg.chrono_bubble.mage_lethal": "pode matar",
   "msg.chrono_bubble.mage_safe": "não mata",
-  "msg.chrono_bubble.mage_removed": "%s Mago(s) do Tempo removido(s)."
+  "msg.chrono_bubble.mage_removed": "%s Mago(s) do Tempo removido(s).",
+  "config.chrono_bubble.visual.bubble_entry": "Entrada animada da bolha",
+  "config.chrono_bubble.visual.bubble_entry.tooltip": "true = a bolha nasce com um clarão, cresce passando um pouco do tamanho e os anéis entram girando rápido; false = só cresce",
+  "config.chrono_bubble.visual.bubble_shatter": "Bolha se parte no fim",
+  "config.chrono_bubble.visual.bubble_shatter.tooltip": "true = quando o congelamento acaba, a bolha se parte em cacos que voam e somem; false = ela só encolhe",
+  "config.chrono_bubble.visual.bubble_ripples": "Ondas nos golpes",
+  "config.chrono_bubble.visual.bubble_ripples.tooltip": "true = golpes e projéteis num alvo congelado fazem uma onda na superfície da bolha, saindo do ponto atingido"
 }

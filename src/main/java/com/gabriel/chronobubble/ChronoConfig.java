@@ -217,6 +217,9 @@ public final class ChronoConfig {
     public static final ForgeConfigSpec.DoubleValue GRIMOIRE_FRONT;
     public static final ForgeConfigSpec.DoubleValue GRIMOIRE_SCALE;
     public static final ForgeConfigSpec.BooleanValue ROT_TINT;
+    public static final ForgeConfigSpec.BooleanValue BUBBLE_ENTRY;
+    public static final ForgeConfigSpec.BooleanValue BUBBLE_SHATTER;
+    public static final ForgeConfigSpec.BooleanValue BUBBLE_RIPPLES;
     public static final ForgeConfigSpec.BooleanValue SECOND_RING;
 
     static {
@@ -403,6 +406,9 @@ public final class ChronoConfig {
         GRIMOIRE_FRONT = dbl(c, "grimoire_front", "Deslocamento em blocos. Positivo = \u00e0 frente do jogador, negativo = atr\u00e1s", 0.15, -3.0, 3.0);
         GRIMOIRE_SCALE = dbl(c, "grimoire_scale", "Tamanho do grim\u00f3rio (multiplicador; 1 = normal)", 1.0, 0.2, 4.0);
         ROT_TINT = bool(c, "rot_tint", "true = quem apodrece pelo soco do Time Steal fica com o corpo escurecendo em tom oliva/podre", true);
+        BUBBLE_ENTRY = bool(c, "bubble_entry", "true = a bolha nasce com um clar\u00e3o, cresce passando um pouco do tamanho e os an\u00e9is entram girando r\u00e1pido; false = s\u00f3 cresce", true);
+        BUBBLE_SHATTER = bool(c, "bubble_shatter", "true = quando o congelamento acaba, a bolha se parte em cacos que voam e somem; false = ela s\u00f3 encolhe", true);
+        BUBBLE_RIPPLES = bool(c, "bubble_ripples", "true = golpes e proj\u00e9teis num alvo congelado fazem uma onda na superf\u00edcie da bolha, saindo do ponto atingido", true);
         SECOND_RING = bool(c, "second_ring", "true = desenha um segundo anel, mais fino, inclinado para o outro lado (o anime usa um s\u00f3)", false);
         c.pop();
         CLIENT_SPEC = c.build();

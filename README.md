@@ -98,6 +98,18 @@ salta à frente e quem congelou paga Time pela vida dele:
 - se o efeito for tirado antes do fim (leite, troca para o sustentado...), nada acontece. O sustentado, o Grigora e
   o Time Hop não envelhecem o alvo.
 
+### Animações da bolha
+
+- **Entrada:** a bolha nasce com um clarão, cresce passando um pouco do tamanho e volta; os anéis de numerais entram
+  maiores e girando rápido, e desaceleram até o giro normal.
+- **Golpes:** soco, flecha ou magia num alvo congelado faz uma onda na superfície da bolha, saindo do ponto atingido
+  (o tempo ali dentro está parado; o golpe não passa do jeito normal). Vale também para o Wither congelado.
+- **Fim:** quando o congelamento acaba (sozinho ou tirado), a bolha se parte em cacos curvos que voam para fora
+  girando, caem um pouco e somem.
+
+Cada uma pode ser desligada na config visual: `bubble_entry`, `bubble_ripples` e `bubble_shatter` (sem a quebra, a
+bolha volta a só encolher).
+
 ### Wither
 
 O Wither ignora efeitos de poção, então ganhou regras próprias (seção `wither` da config):
